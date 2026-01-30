@@ -2,12 +2,19 @@ import { useEffect, useRef, MutableRefObject } from 'react'
 import { KeyState } from './types'
 
 interface UseKeyboardResult {
-  keys: KeyState
+  keys1: KeyState // Arrow keys (Player 1)
+  keys2: KeyState // WASD keys (Player 2)
   onRestartRef: MutableRefObject<(() => void) | null>
 }
 
 export function useKeyboard(): UseKeyboardResult {
-  const keys = useRef<KeyState>({
+  const keys1 = useRef<KeyState>({
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+  })
+  const keys2 = useRef<KeyState>({
     up: false,
     down: false,
     left: false,
@@ -18,20 +25,42 @@ export function useKeyboard(): UseKeyboardResult {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
+        // Player 1 - Arrow keys
         case 'ArrowUp':
-          keys.current.up = true
+          keys1.current.up = true
           e.preventDefault()
           break
         case 'ArrowDown':
-          keys.current.down = true
+          keys1.current.down = true
           e.preventDefault()
           break
         case 'ArrowLeft':
-          keys.current.left = true
+          keys1.current.left = true
           e.preventDefault()
           break
         case 'ArrowRight':
-          keys.current.right = true
+          keys1.current.right = true
+          e.preventDefault()
+          break
+        // Player 2 - WASD keys
+        case 'w':
+        case 'W':
+          keys2.current.up = true
+          e.preventDefault()
+          break
+        case 's':
+        case 'S':
+          keys2.current.down = true
+          e.preventDefault()
+          break
+        case 'a':
+        case 'A':
+          keys2.current.left = true
+          e.preventDefault()
+          break
+        case 'd':
+        case 'D':
+          keys2.current.right = true
           e.preventDefault()
           break
         case ' ':
@@ -43,17 +72,35 @@ export function useKeyboard(): UseKeyboardResult {
 
     const handleKeyUp = (e: KeyboardEvent) => {
       switch (e.key) {
+        // Player 1 - Arrow keys
         case 'ArrowUp':
-          keys.current.up = false
+          keys1.current.up = false
           break
         case 'ArrowDown':
-          keys.current.down = false
+          keys1.current.down = false
           break
         case 'ArrowLeft':
-          keys.current.left = false
+          keys1.current.left = false
           break
         case 'ArrowRight':
-          keys.current.right = false
+          keys1.current.right = false
+          break
+        // Player 2 - WASD keys
+        case 'w':
+        case 'W':
+          keys2.current.up = false
+          break
+        case 's':
+        case 'S':
+          keys2.current.down = false
+          break
+        case 'a':
+        case 'A':
+          keys2.current.left = false
+          break
+        case 'd':
+        case 'D':
+          keys2.current.right = false
           break
       }
     }
@@ -67,5 +114,5 @@ export function useKeyboard(): UseKeyboardResult {
     }
   }, [])
 
-  return { keys: keys.current, onRestartRef }
+  return { keys1: keys1.current, keys2: keys2.current, onRestartRef }
 }

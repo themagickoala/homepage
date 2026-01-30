@@ -24,8 +24,8 @@ export function spawnWakeParticles(
 
   for (let i = 0; i < particlesToSpawn && particles.length < MAX_PARTICLES; i++) {
     // Spawn position at the back corners of the boat (the wake source points)
-    const backOffset = -12
-    const sideOffset = 8
+    const backOffset = -6
+    const sideOffset = 4
 
     // Perpendicular direction to boat facing
     const perpX = -Math.sin(boat.rotation)
@@ -38,12 +38,12 @@ export function spawnWakeParticles(
     // Spawn from left and right sides of the stern
     const sides = [-1, 1]
     for (const side of sides) {
-      const spawnX = backX + perpX * sideOffset * side + (Math.random() - 0.5) * 3
-      const spawnY = backY + perpY * sideOffset * side + (Math.random() - 0.5) * 3
+      const spawnX = backX + perpX * sideOffset * side + (Math.random() - 0.5) * 1.5
+      const spawnY = backY + perpY * sideOffset * side + (Math.random() - 0.5) * 1.5
 
       // Wake particles spread outward from the boat's path
       // They move slowly outward perpendicular to boat direction
-      const spreadSpeed = 15 + Math.random() * 10
+      const spreadSpeed = 8 + Math.random() * 5
       const vx = perpX * side * spreadSpeed
       const vy = perpY * side * spreadSpeed
 
@@ -52,7 +52,7 @@ export function spawnWakeParticles(
         y: spawnY,
         vx,
         vy,
-        size: 2 + Math.random() * 2,
+        size: 1 + Math.random() * 1,
         opacity: 0.4 + Math.random() * 0.2,
         life: PARTICLE_LIFETIME * (0.8 + Math.random() * 0.4),
         maxLife: PARTICLE_LIFETIME,
@@ -60,14 +60,14 @@ export function spawnWakeParticles(
     }
 
     // Also spawn some foam particles directly behind the boat
-    const foamX = backX + (Math.random() - 0.5) * 10
-    const foamY = backY + (Math.random() - 0.5) * 10
+    const foamX = backX + (Math.random() - 0.5) * 5
+    const foamY = backY + (Math.random() - 0.5) * 5
     particles.push({
       x: foamX,
       y: foamY,
-      vx: (Math.random() - 0.5) * 5,
-      vy: (Math.random() - 0.5) * 5,
-      size: 3 + Math.random() * 3,
+      vx: (Math.random() - 0.5) * 2.5,
+      vy: (Math.random() - 0.5) * 2.5,
+      size: 1.5 + Math.random() * 1.5,
       opacity: 0.6 + Math.random() * 0.3,
       life: PARTICLE_LIFETIME * 0.5,
       maxLife: PARTICLE_LIFETIME * 0.5,
@@ -85,7 +85,7 @@ export function updateWakeParticles(particles: WakeParticle[], deltaTime: number
       y: p.y + p.vy * deltaTime,
       vx: p.vx * 0.95, // Slow down spread over time
       vy: p.vy * 0.95,
-      size: p.size + deltaTime * 3, // Grow as ripples expand
+      size: p.size + deltaTime * 1.5, // Grow as ripples expand
       life: p.life - deltaTime,
     }))
     .filter(p => p.life > 0)
@@ -104,7 +104,7 @@ export function renderWake(ctx: CanvasRenderingContext2D, particles: WakeParticl
     // Outer ripple ring
     ctx.globalAlpha = alpha * 0.5
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'
-    ctx.lineWidth = 1.5
+    ctx.lineWidth = 1
     ctx.beginPath()
     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
     ctx.stroke()
