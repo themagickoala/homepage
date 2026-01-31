@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Game } from '../game/Game'
+import { Game } from '../boat-race/Game'
 
 export function BoatRace() {
   return (
