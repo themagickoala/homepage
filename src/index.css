@@ -93,3 +93,361 @@ body {
 .page-header h1 {
   margin-bottom: 0;
 }
+
+/* Deep Sea Adventure styles */
+.deep-sea-game {
+  position: relative;
+  display: inline-block;
+}
+
+.deep-sea-game canvas {
+  border: 2px solid #333;
+  border-radius: 8px;
+}
+
+.deep-sea-game .overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+}
+
+.deep-sea-game .round-summary,
+.deep-sea-game .round-end,
+.deep-sea-game .game-end {
+  background: linear-gradient(135deg, #1a3a5e 0%, #0d2840 100%);
+  padding: 30px 50px;
+  border-radius: 12px;
+  border: 2px solid #2a5a8e;
+  text-align: center;
+  color: #fff;
+}
+
+.deep-sea-game h2 {
+  margin-bottom: 20px;
+  color: #FFD700;
+}
+
+.deep-sea-game .player-scores {
+  margin: 20px 0;
+}
+
+.deep-sea-game .player-score {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.deep-sea-game button {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 15px;
+}
+
+.deep-sea-game button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+}
+
+.game-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 15px 25px;
+  border-radius: 12px;
+  border: 1px solid #333;
+  min-width: 300px;
+}
+
+.current-player {
+  border-left: 4px solid;
+  padding-left: 12px;
+  margin-bottom: 15px;
+}
+
+.player-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.player-status {
+  font-size: 0.85rem;
+  color: #aaa;
+  display: flex;
+  gap: 15px;
+}
+
+.held-treasures {
+  margin-bottom: 15px;
+}
+
+.section-title {
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.treasure-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.held-treasure {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drop-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+.drop-btn:hover {
+  background: rgba(255,255,255,0.3);
+  transform: none;
+  box-shadow: none;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.action-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  margin: 0;
+}
+
+.action-btn.roll {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+}
+
+.action-btn.turn-around {
+  background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+}
+
+.action-btn.pick-up {
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+}
+
+.action-btn.skip {
+  background: linear-gradient(135deg, #7f8c8d 0%, #6c7a7b 100%);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.waiting-message {
+  color: #aaa;
+  font-style: italic;
+}
+
+/* Player Setup */
+.player-setup {
+  background: linear-gradient(135deg, #1a3a5e 0%, #0d2840 100%);
+  padding: 40px;
+  border-radius: 12px;
+  border: 2px solid #2a5a8e;
+  max-width: 500px;
+  margin: 0 auto;
+  color: #fff;
+}
+
+.player-setup h2 {
+  color: #FFD700;
+  margin-bottom: 10px;
+}
+
+.player-setup > p {
+  color: #aaa;
+  margin-bottom: 30px;
+}
+
+.player-count-section {
+  margin-bottom: 25px;
+}
+
+.player-count-section h3 {
+  font-size: 1rem;
+  margin-bottom: 15px;
+  color: #87CEEB;
+}
+
+.player-count-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.player-count-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid #3a5a8e;
+  background: transparent;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.player-count-btn:hover {
+  border-color: #5a8abe;
+  transform: scale(1.1);
+}
+
+.player-count-btn.selected {
+  background: #3498db;
+  border-color: #3498db;
+}
+
+.player-preview h3 {
+  font-size: 1rem;
+  margin-bottom: 15px;
+  color: #87CEEB;
+}
+
+.player-colors {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+}
+
+.player-color-preview {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.start-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.2rem;
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 25px;
+}
+
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(46, 204, 113, 0.4);
+}
+
+.rules-summary {
+  text-align: left;
+  padding: 15px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+}
+
+.rules-summary h3 {
+  font-size: 0.9rem;
+  color: #87CEEB;
+  margin-bottom: 10px;
+}
+
+.rules-summary ul {
+  list-style-position: inside;
+  color: #aaa;
+  font-size: 0.85rem;
+}
+
+.rules-summary li {
+  margin-bottom: 5px;
+}
+
+/* Scoreboard */
+.scoreboard {
+  text-align: left;
+  min-width: 300px;
+}
+
+.scoreboard h3 {
+  text-align: center;
+  color: #87CEEB;
+  margin-bottom: 15px;
+}
+
+.rankings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 15px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+}
+
+.ranking-row.winner {
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.rank {
+  font-weight: bold;
+  min-width: 50px;
+}
+
+.ranking-row .player-name {
+  flex: 1;
+}
+
+.score {
+  font-weight: bold;
+}
+
+.scored-treasures {
+  font-size: 0.75rem;
+  color: #888;
+  width: 100%;
+  margin-top: 5px;
+}

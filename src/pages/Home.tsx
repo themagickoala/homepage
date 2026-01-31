@@ -12,6 +12,12 @@ export function Home() {
             <p>Race through checkpoints on the water!</p>
           </div>
         </Link>
+        <Link to="/deep-sea-adventure" className="game-link">
+          <div className="game-card">
+            <h2>🤿 Deep Sea Adventure</h2>
+            <p>Dive for treasure before the oxygen runs out!</p>
+          </div>
+        </Link>
       </nav>
     </div>
   )
