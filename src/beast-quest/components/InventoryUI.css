@@ -1,0 +1,253 @@
+/* Inventory UI Styles */
+
+.inventory-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.inventory-panel {
+  background: rgba(20, 20, 40, 0.98);
+  border: 2px solid #4a4a6a;
+  border-radius: 8px;
+  width: 600px;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #4a4a6a;
+}
+
+.inventory-header h2 {
+  margin: 0;
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 20px;
+}
+
+.gold-display {
+  color: #ffdd44;
+  font-family: monospace;
+  font-size: 16px;
+}
+
+.inventory-tabs {
+  display: flex;
+  border-bottom: 1px solid #4a4a6a;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  color: #888899;
+  font-family: monospace;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  background: rgba(60, 60, 100, 0.5);
+  color: #aaaacc;
+}
+
+.tab.active {
+  background: rgba(60, 60, 120, 0.7);
+  color: #ffffff;
+  border-bottom: 2px solid #aaaaff;
+}
+
+.inventory-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.item-list {
+  width: 250px;
+  border-right: 1px solid #4a4a6a;
+  overflow-y: auto;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.item-row:hover {
+  background: rgba(60, 60, 100, 0.3);
+}
+
+.item-row.selected {
+  background: rgba(60, 60, 120, 0.5);
+  border-left: 3px solid #aaaaff;
+}
+
+.item-name {
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.item-quantity {
+  color: #888899;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.empty-message {
+  padding: 20px;
+  text-align: center;
+  color: #666688;
+  font-family: monospace;
+  font-style: italic;
+}
+
+.item-details {
+  flex: 1;
+  padding: 15px;
+}
+
+.item-details h3 {
+  margin: 0 0 10px 0;
+  color: #aaaaff;
+  font-family: monospace;
+  font-size: 16px;
+}
+
+.item-description {
+  color: #cccccc;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+.equip-stats {
+  background: rgba(40, 40, 80, 0.5);
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.stat-bonus {
+  color: #88ff88;
+  font-family: monospace;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.stat-bonus:last-child {
+  margin-bottom: 0;
+}
+
+.no-selection {
+  color: #666688;
+  font-family: monospace;
+  font-style: italic;
+}
+
+.character-select {
+  border-top: 1px solid #4a4a6a;
+  padding: 15px;
+  background: rgba(30, 30, 60, 0.5);
+}
+
+.character-select h3 {
+  margin: 0 0 10px 0;
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.character-list {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.character-option {
+  flex: 1;
+  padding: 10px;
+  background: rgba(40, 40, 80, 0.5);
+  border: 2px solid #4a4a6a;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.character-option:hover {
+  background: rgba(60, 60, 100, 0.5);
+  border-color: #6a6a8a;
+}
+
+.character-option.selected {
+  background: rgba(60, 60, 120, 0.7);
+  border-color: #aaaaff;
+}
+
+.char-name {
+  display: block;
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.char-stats {
+  display: flex;
+  gap: 10px;
+  color: #888899;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.character-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.character-actions button {
+  flex: 1;
+  padding: 8px 15px;
+  background: rgba(60, 60, 120, 0.7);
+  border: 1px solid #6a6a8a;
+  border-radius: 4px;
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.character-actions button:hover {
+  background: rgba(80, 80, 150, 0.8);
+  border-color: #aaaaff;
+}
+
+.inventory-footer {
+  padding: 10px 15px;
+  border-top: 1px solid #4a4a6a;
+  text-align: center;
+  color: #666688;
+  font-family: monospace;
+  font-size: 11px;
+}

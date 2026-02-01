@@ -1,0 +1,193 @@
+/* Beast Quest Game Styles */
+
+.beast-quest-game {
+  width: 800px;
+  height: 600px;
+  margin: 0 auto;
+  position: relative;
+  background: #0a0a1a;
+  overflow: hidden;
+}
+
+/* Title Screen */
+.beast-quest-title {
+  width: 800px;
+  height: 600px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #1a0a0a 0%, #0a0a1a 50%, #1a1a2a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title-content {
+  text-align: center;
+}
+
+.title-content h1 {
+  font-family: monospace;
+  font-size: 48px;
+  color: #ff6600;
+  text-shadow: 0 0 20px rgba(255, 102, 0, 0.5), 2px 2px 0 #660000;
+  margin: 0 0 10px 0;
+  letter-spacing: 4px;
+}
+
+.title-content .subtitle {
+  font-family: monospace;
+  font-size: 18px;
+  color: #888899;
+  margin: 0 0 40px 0;
+}
+
+.title-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.title-menu button {
+  width: 200px;
+  padding: 15px 30px;
+  font-family: monospace;
+  font-size: 18px;
+  background: rgba(60, 60, 120, 0.7);
+  border: 2px solid #6a6a8a;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.title-menu button:hover {
+  background: rgba(80, 80, 150, 0.8);
+  border-color: #aaaaff;
+  transform: scale(1.05);
+}
+
+.title-controls {
+  background: rgba(20, 20, 40, 0.8);
+  padding: 20px 30px;
+  border-radius: 8px;
+  border: 1px solid #4a4a6a;
+}
+
+.title-controls h3 {
+  font-family: monospace;
+  font-size: 14px;
+  color: #aaaacc;
+  margin: 0 0 15px 0;
+}
+
+.title-controls p {
+  font-family: monospace;
+  font-size: 12px;
+  color: #888899;
+  margin: 5px 0;
+}
+
+/* Game Over Screen */
+.beast-quest-gameover {
+  width: 800px;
+  height: 600px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #2a0a0a 0%, #1a0a0a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gameover-content {
+  text-align: center;
+}
+
+.gameover-content h1 {
+  font-family: monospace;
+  font-size: 48px;
+  color: #cc0000;
+  text-shadow: 2px 2px 0 #440000;
+  margin: 0 0 20px 0;
+}
+
+.gameover-content p {
+  font-family: monospace;
+  font-size: 16px;
+  color: #888899;
+  margin: 0 0 40px 0;
+}
+
+.gameover-options {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.gameover-options button {
+  padding: 12px 24px;
+  font-family: monospace;
+  font-size: 16px;
+  background: rgba(60, 60, 80, 0.7);
+  border: 2px solid #6a6a8a;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gameover-options button:hover {
+  background: rgba(80, 80, 100, 0.8);
+  border-color: #aaaaaa;
+}
+
+/* Victory Screen */
+.beast-quest-victory {
+  width: 800px;
+  height: 600px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #1a2a1a 0%, #0a1a0a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.victory-content {
+  text-align: center;
+}
+
+.victory-content h1 {
+  font-family: monospace;
+  font-size: 48px;
+  color: #ffdd00;
+  text-shadow: 0 0 20px rgba(255, 221, 0, 0.5), 2px 2px 0 #886600;
+  margin: 0 0 20px 0;
+}
+
+.victory-content p {
+  font-family: monospace;
+  font-size: 16px;
+  color: #aaccaa;
+  margin: 0 0 15px 0;
+}
+
+.victory-options {
+  margin-top: 40px;
+}
+
+.victory-options button {
+  padding: 15px 30px;
+  font-family: monospace;
+  font-size: 18px;
+  background: rgba(60, 120, 60, 0.7);
+  border: 2px solid #6a8a6a;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.victory-options button:hover {
+  background: rgba(80, 150, 80, 0.8);
+  border-color: #aaffaa;
+}

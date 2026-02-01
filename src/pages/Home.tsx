@@ -18,6 +18,12 @@ export function Home() {
             <p>Dive for treasure before the oxygen runs out!</p>
           </div>
         </Link>
+        <Link to="/beast-quest" className="game-link">
+          <div className="game-card">
+            <h2>🐉 Beast Quest</h2>
+            <p>Battle Ferno the Fire Dragon in this isometric RPG demo!</p>
+          </div>
+        </Link>
       </nav>
     </div>
   )
