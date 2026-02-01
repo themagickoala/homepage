@@ -501,13 +501,17 @@ export function CombatSystem({
       }
     })
 
-    // Draw party stats
+    // Draw party stats (on right side to avoid overlap with battle menu)
     const partyEntities = combatState.entities.filter((e) => e.isPlayer)
     partyEntities.forEach((entity, index) => {
       const member = party.find((m) => m.id === entity.id)
       if (!member) return
 
-      drawCharacterStats(ctx, 10 + index * 190, CANVAS_HEIGHT - 90, {
+      // Position stats on right side, stacked vertically
+      const statsX = CANVAS_WIDTH - 195
+      const statsY = CANVAS_HEIGHT - 155 + index * 75
+
+      drawCharacterStats(ctx, statsX, statsY, {
         ...member,
         stats: entity.stats,
       } as PartyMember)
@@ -516,7 +520,7 @@ export function CombatSystem({
       if (combatState.currentEntityIndex === combatState.entities.indexOf(entity)) {
         ctx.strokeStyle = '#ffff00'
         ctx.lineWidth = 2
-        ctx.strokeRect(8 + index * 190, CANVAS_HEIGHT - 92, 184, 69)
+        ctx.strokeRect(statsX - 2, statsY - 2, 184, 69)
       }
     })
 

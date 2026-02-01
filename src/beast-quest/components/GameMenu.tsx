@@ -3,7 +3,7 @@
 // ============================================
 // Main pause menu with save/load and options
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { PartyMember } from '../types'
 import './GameMenu.css'
 
@@ -44,8 +44,8 @@ export function GameMenu({
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  // Main menu options
-  const mainOptions = [
+  // Main menu options - memoized to prevent useEffect re-running
+  const mainOptions = useMemo(() => [
     { label: 'Resume', action: onResume },
     { label: 'Inventory', action: onInventory },
     { label: 'Skills', action: onSkillTree },
@@ -53,7 +53,7 @@ export function GameMenu({
     { label: 'Save', action: () => setSection('save') },
     { label: 'Load', action: () => setSection('load') },
     { label: 'Quit', action: onQuit },
-  ]
+  ], [onResume, onInventory, onSkillTree, onQuit])
 
   // Handle save
   const handleSave = useCallback(() => {

@@ -264,56 +264,34 @@ export function Dungeon({
 
     // Get visible tiles
     const visibleTiles = getVisibleTiles(currentRoom.width, currentRoom.height)
+    const playerDepth = explorationState.playerPosition.row + explorationState.playerPosition.col
+    let playerDrawn = false
+    const drawnEntities = new Set<string>()
 
-    // Draw tiles in render order
-    for (const tilePos of visibleTiles) {
-      const tileType = currentRoom.tiles[tilePos.row]?.[tilePos.col]
-      if (!tileType) continue
+    // Helper to draw an entity
+    const drawEntity = (entity: MapEntity) => {
+      if (drawnEntities.has(entity.id)) return
+      drawnEntities.add(entity.id)
 
-      const colors = TILE_COLORS[tileType]
-      const height = getTileHeight(tileType)
-
-      if (height > 0) {
-        // Draw as cube (wall, chest, etc.)
-        drawIsometricCube(ctx, tilePos, height, colors.top, colors.left, colors.right)
-      } else {
-        // Draw as flat tile
-        drawIsometricTile(ctx, tilePos, colors.top, colors.left)
-      }
-
-      // Add highlight effect for special tiles
-      if (colors.highlight && tileType === 'lava') {
-        // Animated lava glow
-        const glowIntensity = 0.3 + Math.sin(animationFrame * 0.1) * 0.2
-        ctx.globalAlpha = glowIntensity
-        drawIsometricTile(ctx, tilePos, colors.highlight)
-        ctx.globalAlpha = 1
-      }
-
-      if (tileType === 'save_point') {
-        // Animated save point glow
-        const glowIntensity = 0.5 + Math.sin(animationFrame * 0.08) * 0.3
-        ctx.globalAlpha = glowIntensity
-        const screenPos = isoToScreen(tilePos)
-        ctx.fillStyle = '#6a8aaa'
-        ctx.beginPath()
-        ctx.arc(screenPos.x, screenPos.y, 10, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.globalAlpha = 1
-      }
-    }
-
-    // Draw entities
-    for (const entity of currentRoom.entities) {
       const screenPos = isoToScreen(entity.position)
 
-      // Check if entity should be visible
-      if (entity.type === 'chest' && explorationState.openedChests.includes(entity.id)) {
-        // Draw opened chest differently
-        ctx.fillStyle = '#5a4a3a'
-        ctx.fillRect(screenPos.x - 10, screenPos.y - 15, 20, 12)
+      if (entity.type === 'chest') {
+        const isOpened = explorationState.openedChests.includes(entity.id)
+        // Draw chest body
+        ctx.fillStyle = isOpened ? '#5a4a3a' : '#8B4513'
+        ctx.fillRect(screenPos.x - 12, screenPos.y - 12, 24, 14)
+        // Draw chest lid
+        ctx.fillStyle = isOpened ? '#4a3a2a' : '#A0522D'
+        ctx.fillRect(screenPos.x - 14, screenPos.y - 18, 28, 6)
+        // Draw gold trim
+        ctx.fillStyle = '#FFD700'
+        ctx.fillRect(screenPos.x - 3, screenPos.y - 10, 6, 4)
+        if (isOpened) {
+          // Draw open lid
+          ctx.fillStyle = '#A0522D'
+          ctx.fillRect(screenPos.x - 14, screenPos.y - 28, 28, 10)
+        }
       } else if (entity.type === 'switch') {
-        // Draw switch state
         const isActive = explorationState.activatedSwitches.includes(entity.id)
         ctx.fillStyle = isActive ? '#00ff00' : '#666666'
         ctx.beginPath()
@@ -323,7 +301,6 @@ export function Dungeon({
         ctx.lineWidth = 2
         ctx.stroke()
       } else if (entity.type === 'npc') {
-        // Simple NPC representation
         ctx.fillStyle = '#aa8866'
         ctx.beginPath()
         ctx.arc(screenPos.x, screenPos.y - 12, 8, 0, Math.PI * 2)
@@ -331,7 +308,6 @@ export function Dungeon({
         ctx.fillStyle = '#664422'
         ctx.fillRect(screenPos.x - 6, screenPos.y - 4, 12, 16)
       } else if (entity.type === 'enemy') {
-        // Boss indicator
         ctx.fillStyle = '#ff4444'
         ctx.beginPath()
         ctx.moveTo(screenPos.x, screenPos.y - 30)
@@ -339,8 +315,6 @@ export function Dungeon({
         ctx.lineTo(screenPos.x + 15, screenPos.y)
         ctx.closePath()
         ctx.fill()
-
-        // Pulsing effect for boss
         const pulse = Math.sin(animationFrame * 0.1) * 0.3 + 0.7
         ctx.globalAlpha = pulse
         ctx.strokeStyle = '#ffaa00'
@@ -350,15 +324,89 @@ export function Dungeon({
       }
     }
 
-    // Draw player character
-    drawCharacterSprite(
-      ctx,
-      explorationState.playerPosition,
-      'tom',
-      explorationState.playerDirection,
-      isMoving,
-      animationFrame
-    )
+    // First pass: Draw all floor tiles
+    for (const tilePos of visibleTiles) {
+      const tileType = currentRoom.tiles[tilePos.row]?.[tilePos.col]
+      if (!tileType) continue
+
+      const colors = TILE_COLORS[tileType]
+      const height = getTileHeight(tileType)
+
+      if (height === 0) {
+        drawIsometricTile(ctx, tilePos, colors.top, colors.left)
+
+        // Special tile effects
+        if (colors.highlight && tileType === 'lava') {
+          const glowIntensity = 0.3 + Math.sin(animationFrame * 0.1) * 0.2
+          ctx.globalAlpha = glowIntensity
+          drawIsometricTile(ctx, tilePos, colors.highlight)
+          ctx.globalAlpha = 1
+        }
+        if (tileType === 'save_point') {
+          const glowIntensity = 0.5 + Math.sin(animationFrame * 0.08) * 0.3
+          ctx.globalAlpha = glowIntensity
+          const screenPos = isoToScreen(tilePos)
+          ctx.fillStyle = '#6a8aaa'
+          ctx.beginPath()
+          ctx.arc(screenPos.x, screenPos.y, 10, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.globalAlpha = 1
+        }
+      }
+    }
+
+    // Second pass: Draw walls, entities, and player in correct z-order
+    for (const tilePos of visibleTiles) {
+      const tileType = currentRoom.tiles[tilePos.row]?.[tilePos.col]
+      if (!tileType) continue
+
+      const tileDepth = tilePos.row + tilePos.col
+      const colors = TILE_COLORS[tileType]
+      const height = getTileHeight(tileType)
+
+      if (height > 0) {
+        // Draw player before this wall if player is behind it
+        if (!playerDrawn && playerDepth <= tileDepth) {
+          drawCharacterSprite(
+            ctx,
+            explorationState.playerPosition,
+            'tom',
+            explorationState.playerDirection,
+            isMoving,
+            animationFrame
+          )
+          playerDrawn = true
+        }
+
+        // Draw entities that should appear before this wall
+        for (const entity of currentRoom.entities) {
+          const entityDepth = entity.position.row + entity.position.col
+          if (entityDepth <= tileDepth) {
+            drawEntity(entity)
+          }
+        }
+
+        // Draw the elevated tile
+        drawIsometricCube(ctx, tilePos, height, colors.top, colors.left, colors.right)
+      }
+    }
+
+    // Draw any remaining entities that are in front of all walls
+    for (const entity of currentRoom.entities) {
+      drawEntity(entity)
+    }
+
+    // Draw player if not yet drawn (player is in front of all walls)
+    if (!playerDrawn) {
+      drawCharacterSprite(
+        ctx,
+        explorationState.playerPosition,
+        'tom',
+        explorationState.playerDirection,
+        isMoving,
+        animationFrame
+      )
+    }
 
     // Draw HUD
     drawExplorationHUD(ctx, party as any, currentRoom.name)
