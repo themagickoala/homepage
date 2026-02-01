@@ -333,10 +333,12 @@ export function Game() {
         <CombatSystem
           party={gameState.party}
           enemies={currentEnemies}
+          inventory={gameState.inventory}
           canFlee={!currentEnemies.some((e) => e.type === 'boss')}
           onVictory={handleVictory}
           onDefeat={handleDefeat}
           onFlee={handleFlee}
+          onUseItem={handleUseItem}
         />
       )}
 

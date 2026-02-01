@@ -12,6 +12,7 @@ import {
   Skill,
   Item,
   BattleLogEntry,
+  InventorySlot,
 } from '../types'
 import {
   executeAttack,
@@ -42,10 +43,12 @@ import {
 interface CombatSystemProps {
   party: PartyMember[]
   enemies: Enemy[]
+  inventory: InventorySlot[]
   canFlee: boolean
   onVictory: (experience: number, gold: number, loot: string[]) => void
   onDefeat: () => void
   onFlee: () => void
+  onUseItem: (itemId: string, targetId: string) => void
 }
 
 type MenuState = 'main' | 'skills' | 'items' | 'targets'
@@ -53,10 +56,12 @@ type MenuState = 'main' | 'skills' | 'items' | 'targets'
 export function CombatSystem({
   party,
   enemies,
+  inventory,
   canFlee,
   onVictory,
   onDefeat,
   onFlee,
+  onUseItem,
 }: CombatSystemProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [combatState, setCombatState] = useState<CombatState | null>(null)
@@ -271,7 +276,8 @@ export function CombatSystem({
         const result = executeItem(combatState, currentEntity.id, pendingItem, targetId)
         newState = result.state
         logs.push(result.log)
-        // TODO: Remove item from inventory
+        // Remove item from inventory
+        onUseItem(pendingItem.id, targetId)
       } else {
         // Basic attack
         const result = executeAttack(combatState, currentEntity.id, targetId)
@@ -297,7 +303,7 @@ export function CombatSystem({
         setTimeout(nextTurn, 500)
       }
     },
-    [getCurrentEntity, combatState, pendingSkill, pendingItem, nextTurn, onVictory, onDefeat]
+    [getCurrentEntity, combatState, pendingSkill, pendingItem, nextTurn, onVictory, onDefeat, onUseItem]
   )
 
   // Simple enemy AI
@@ -375,11 +381,14 @@ export function CombatSystem({
             setSelectedIndex((prev) => Math.min(4, prev + 1))
           } else if (menuState === 'skills' && currentMember) {
             setSelectedIndex((prev) => Math.min(currentMember.skills.length - 1, prev + 1))
+          } else if (menuState === 'items') {
+            const usableItems = inventory.filter((slot) => slot.item.type === 'consumable')
+            setSelectedIndex((prev) => Math.min(usableItems.length - 1, prev + 1))
           } else if (menuState === 'targets') {
             const targets = getValidTargets(
               combatState,
               getCurrentEntity()!.id,
-              pendingSkill?.targetType || 'single_enemy'
+              pendingSkill?.targetType || (pendingItem ? 'single_ally' : 'single_enemy')
             )
             setSelectedIndex((prev) => Math.min(targets.length - 1, prev + 1))
           }
@@ -397,11 +406,18 @@ export function CombatSystem({
             handleAction(actions[selectedIndex])
           } else if (menuState === 'skills' && currentMember) {
             handleSkillSelect(currentMember.skills[selectedIndex])
+          } else if (menuState === 'items') {
+            const usableItems = inventory.filter((slot) => slot.item.type === 'consumable')
+            if (usableItems[selectedIndex]) {
+              setPendingItem(usableItems[selectedIndex].item)
+              setMenuState('targets')
+              setSelectedIndex(0)
+            }
           } else if (menuState === 'targets') {
             const targets = getValidTargets(
               combatState,
               getCurrentEntity()!.id,
-              pendingSkill?.targetType || 'single_enemy'
+              pendingSkill?.targetType || (pendingItem ? 'single_ally' : 'single_enemy')
             )
             if (targets[selectedIndex]) {
               handleTargetSelect(targets[selectedIndex].id)
@@ -431,6 +447,8 @@ export function CombatSystem({
     handleSkillSelect,
     handleTargetSelect,
     pendingSkill,
+    pendingItem,
+    inventory,
   ])
 
   // Render combat scene
@@ -539,11 +557,22 @@ export function CombatSystem({
           enabled: canUseSkill(combatState.entities.find((e) => e.id === currentMember.id)!, skill),
         }))
         drawMenu(ctx, 20, CANVAS_HEIGHT - 200, skillOptions, selectedIndex)
+      } else if (menuState === 'items') {
+        const usableItems = inventory.filter((slot) => slot.item.type === 'consumable')
+        const itemOptions = usableItems.map((slot) => ({
+          label: `${slot.item.name} x${slot.quantity}`,
+          enabled: slot.quantity > 0,
+        }))
+        if (itemOptions.length === 0) {
+          drawMenu(ctx, 20, CANVAS_HEIGHT - 200, [{ label: 'No items', enabled: false }], 0)
+        } else {
+          drawMenu(ctx, 20, CANVAS_HEIGHT - 200, itemOptions, selectedIndex)
+        }
       } else if (menuState === 'targets') {
         const targets = getValidTargets(
           combatState,
           getCurrentEntity()!.id,
-          pendingSkill?.targetType || 'single_enemy'
+          pendingSkill?.targetType || (pendingItem ? 'single_ally' : 'single_enemy')
         )
         const targetOptions = targets.map((t) => ({
           label: t.name,
@@ -569,8 +598,10 @@ export function CombatSystem({
     battleLog,
     party,
     enemies,
+    inventory,
     canFlee,
     pendingSkill,
+    pendingItem,
     getCurrentEntity,
     getCurrentPartyMember,
   ])
