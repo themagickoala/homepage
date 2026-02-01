@@ -1,0 +1,101 @@
+/* ============================================
+   Notification Styles
+   ============================================ */
+
+.notifications-container {
+  position: fixed;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.notification {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(20, 20, 40, 0.95);
+  border: 2px solid #4a4a6a;
+  border-radius: 8px;
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 14px;
+  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.notification.exiting {
+  animation: slideOut 0.5s ease-in forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+.notification-icon {
+  font-size: 18px;
+}
+
+.notification-message {
+  white-space: nowrap;
+}
+
+/* Type-specific styles */
+.notification-item {
+  border-color: #8B4513;
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.3), rgba(20, 20, 40, 0.95));
+}
+
+.notification-levelup {
+  border-color: #FFD700;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(20, 20, 40, 0.95));
+}
+
+.notification-levelup .notification-message {
+  color: #FFD700;
+  font-weight: bold;
+}
+
+.notification-gold {
+  border-color: #FFD700;
+}
+
+.notification-gold .notification-message {
+  color: #FFD700;
+}
+
+.notification-exp {
+  border-color: #66aaff;
+}
+
+.notification-exp .notification-message {
+  color: #66aaff;
+}
+
+.notification-info {
+  border-color: #6a8aaa;
+}

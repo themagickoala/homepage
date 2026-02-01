@@ -203,14 +203,16 @@ export function drawMenu(
 ): void {
   const itemHeight = 24
   const padding = 10
+
+  // Set font before measuring text width
+  ctx.save()
+  ctx.font = FONTS.normal
   const maxWidth = Math.max(...options.map((o) => ctx.measureText(o.label).width)) + padding * 2 + 20
   const panelWidth = Math.max(120, maxWidth)
   const panelHeight = options.length * itemHeight + padding * 2
 
   drawPanel(ctx, x, y, panelWidth, panelHeight)
 
-  ctx.save()
-  ctx.font = FONTS.normal
   ctx.textAlign = 'left'
 
   options.forEach((option, index) => {
@@ -391,11 +393,11 @@ export function drawDialogueBox(
 export function drawBattleLog(
   ctx: CanvasRenderingContext2D,
   messages: { message: string; type: string }[],
-  maxMessages: number = 4
+  maxMessages: number = 6
 ): void {
-  const logX = CANVAS_WIDTH - 250
+  const logX = CANVAS_WIDTH - 340
   const logY = 10
-  const logWidth = 240
+  const logWidth = 330
   const lineHeight = 18
   const visibleMessages = messages.slice(-maxMessages)
   const logHeight = lineHeight * maxMessages + 16

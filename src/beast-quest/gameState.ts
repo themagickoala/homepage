@@ -316,6 +316,13 @@ export function addExperience(state: GameState, amount: number): GameState {
     let newLevel = member.stats.level
     let expToNext = member.stats.experienceToNextLevel
 
+    // Track stat bonuses from level ups (don't mutate original)
+    let bonusMaxHp = 0
+    let bonusMaxMp = 0
+    let bonusAttack = 0
+    let bonusDefense = 0
+    let bonusSpeed = 0
+
     // Check for level up
     while (newExp >= expToNext && newLevel < 99) {
       newExp -= expToNext
@@ -323,23 +330,31 @@ export function addExperience(state: GameState, amount: number): GameState {
       // Increase exp requirement for next level
       expToNext = Math.floor(expToNext * 1.5)
 
-      // Apply level up stat bonuses (simplified)
-      member.stats.maxHp += 5
-      member.stats.maxMp += 3
-      member.stats.attack += 2
-      member.stats.defense += 1
-      member.stats.speed += 1
+      // Accumulate level up stat bonuses
+      bonusMaxHp += 5
+      bonusMaxMp += 3
+      bonusAttack += 2
+      bonusDefense += 1
+      bonusSpeed += 1
     }
+
+    const newMaxHp = member.stats.maxHp + bonusMaxHp
+    const newMaxMp = member.stats.maxMp + bonusMaxMp
 
     return {
       ...member,
       stats: {
         ...member.stats,
+        maxHp: newMaxHp,
+        maxMp: newMaxMp,
+        attack: member.stats.attack + bonusAttack,
+        defense: member.stats.defense + bonusDefense,
+        speed: member.stats.speed + bonusSpeed,
         experience: newExp,
         experienceToNextLevel: expToNext,
         level: newLevel,
-        currentHp: member.stats.maxHp, // Heal on level up
-        currentMp: member.stats.maxMp,
+        currentHp: newMaxHp, // Heal on level up
+        currentMp: newMaxMp,
       },
     }
   })

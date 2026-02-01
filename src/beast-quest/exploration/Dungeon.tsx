@@ -71,6 +71,14 @@ export function Dungeon({
     moveEndPos.current = null
   }, [explorationState.currentRoomId])
 
+  // Sync visual position when player position changes outside of movement
+  // (e.g., after returning from combat)
+  useEffect(() => {
+    if (!moveStartTime.current) {
+      setVisualPosition(explorationState.playerPosition)
+    }
+  }, [explorationState.playerPosition])
+
   // Animation loop
   useEffect(() => {
     let frameId: number
@@ -85,17 +93,17 @@ export function Dungeon({
         // Ease out cubic for smooth deceleration
         const eased = 1 - Math.pow(1 - progress, 3)
 
-        // Interpolate position
-        const newCol = moveStartPos.current.col + (moveEndPos.current.col - moveStartPos.current.col) * eased
-        const newRow = moveStartPos.current.row + (moveEndPos.current.row - moveStartPos.current.row) * eased
-
-        setVisualPosition({ col: newCol, row: newRow })
-
-        // Animation complete
+        // Animation complete - snap to exact end position
         if (progress >= 1) {
+          setVisualPosition({ col: moveEndPos.current.col, row: moveEndPos.current.row })
           moveStartTime.current = null
           moveStartPos.current = null
           moveEndPos.current = null
+        } else {
+          // Interpolate position during animation
+          const newCol = moveStartPos.current.col + (moveEndPos.current.col - moveStartPos.current.col) * eased
+          const newRow = moveStartPos.current.row + (moveEndPos.current.row - moveStartPos.current.row) * eased
+          setVisualPosition({ col: newCol, row: newRow })
         }
       }
 
@@ -210,13 +218,17 @@ export function Dungeon({
 
   // Handle interaction
   const handleInteraction = useCallback(() => {
-    if (!currentRoom) return
+    if (!currentRoom || isMoving) return
 
     const { playerPosition, playerDirection } = explorationState
 
+    // Ensure position values are integers (defensive against any floating point issues)
+    const col = Math.round(playerPosition.col)
+    const row = Math.round(playerPosition.row)
+
     // Get position in front of player
-    let targetCol = playerPosition.col
-    let targetRow = playerPosition.row
+    let targetCol = col
+    let targetRow = row
 
     switch (playerDirection) {
       case 'north':
@@ -238,7 +250,9 @@ export function Dungeon({
       (e) => e.position.col === targetCol && e.position.row === targetRow
     )
 
-    if (entity && canInteract(entity, playerPosition, explorationState)) {
+    // Use the rounded position for the adjacency check
+    const roundedPosition = { col, row }
+    if (entity && canInteract(entity, roundedPosition, explorationState)) {
       onInteract(entity)
     }
 
@@ -267,7 +281,7 @@ export function Dungeon({
         }
       }
     }
-  }, [currentRoom, explorationState, onInteract, onRoomChange])
+  }, [currentRoom, explorationState, onInteract, onRoomChange, isMoving])
 
   // Keyboard input
   useEffect(() => {

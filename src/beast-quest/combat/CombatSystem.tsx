@@ -53,6 +53,13 @@ interface CombatSystemProps {
 
 type MenuState = 'main' | 'skills' | 'items' | 'targets'
 
+interface VictoryRewards {
+  experience: number
+  gold: number
+  loot: string[]
+  levelUps: { name: string; newLevel: number }[]
+}
+
 export function CombatSystem({
   party,
   enemies,
@@ -71,9 +78,16 @@ export function CombatSystem({
   const [pendingItem, setPendingItem] = useState<Item | null>(null)
   const [animationFrame, setAnimationFrame] = useState(0)
   const [battleLog, setBattleLog] = useState<BattleLogEntry[]>([])
+  const [victoryRewards, setVictoryRewards] = useState<VictoryRewards | null>(null)
+  const [showVictorySummary, setShowVictorySummary] = useState(false)
+  const isInitialized = useRef(false)
 
-  // Initialize combat
+  // Initialize combat - only runs once on mount
   useEffect(() => {
+    // Prevent re-initialization if party/inventory props change during combat
+    if (isInitialized.current) return
+    isInitialized.current = true
+
     const partyEntities: CombatEntity[] = party.map((member) => ({
       id: member.id,
       name: member.name,
@@ -292,7 +306,29 @@ export function CombatSystem({
       const endResult = checkCombatEnd(newState)
       if (endResult === 'victory') {
         setCombatState((prev) => (prev ? { ...prev, phase: 'victory' } : prev))
-        setTimeout(() => onVictory(100, 50, []), 2000)
+        // Calculate rewards from all enemies
+        const totalExp = enemies.reduce((sum, e) => sum + e.experienceReward, 0)
+        const totalGold = enemies.reduce((sum, e) => sum + e.goldReward, 0)
+        const loot: string[] = []
+        enemies.forEach((e) => {
+          e.lootTable.forEach((entry) => {
+            if (Math.random() < entry.dropRate) {
+              loot.push(entry.itemId)
+            }
+          })
+        })
+
+        // Calculate level ups (simulated - check if exp would cause level up)
+        const levelUps: { name: string; newLevel: number }[] = []
+        party.forEach((member) => {
+          const expNeeded = member.stats.experienceToNextLevel - member.stats.experience
+          if (totalExp >= expNeeded) {
+            levelUps.push({ name: member.name, newLevel: member.stats.level + 1 })
+          }
+        })
+
+        setVictoryRewards({ experience: totalExp, gold: totalGold, loot, levelUps })
+        setTimeout(() => setShowVictorySummary(true), 1500)
       } else if (endResult === 'defeat') {
         setCombatState((prev) => (prev ? { ...prev, phase: 'defeat' } : prev))
         setTimeout(onDefeat, 2000)
@@ -368,6 +404,14 @@ export function CombatSystem({
   // Keyboard input
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle victory summary dismissal
+      if (showVictorySummary && victoryRewards) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onVictory(victoryRewards.experience, victoryRewards.gold, victoryRewards.loot)
+        }
+        return
+      }
+
       if (!combatState || combatState.phase !== 'selecting_action') return
 
       const currentMember = getCurrentPartyMember()
@@ -449,6 +493,9 @@ export function CombatSystem({
     pendingSkill,
     pendingItem,
     inventory,
+    showVictorySummary,
+    victoryRewards,
+    onVictory,
   ])
 
   // Render combat scene
@@ -586,8 +633,86 @@ export function CombatSystem({
 
     // Draw phase overlays
     if (combatState.phase === 'victory') {
-      drawOverlay(ctx, 0.5)
-      drawCenteredText(ctx, 'Victory!', CANVAS_HEIGHT / 2, FONTS.title, '#ffff00')
+      drawOverlay(ctx, 0.7)
+
+      if (showVictorySummary && victoryRewards) {
+        // Draw victory summary panel
+        const panelWidth = 350
+        const panelHeight = 250 + (victoryRewards.levelUps.length * 25)
+        const panelX = (CANVAS_WIDTH - panelWidth) / 2
+        const panelY = (CANVAS_HEIGHT - panelHeight) / 2
+
+        // Panel background
+        ctx.fillStyle = 'rgba(20, 20, 40, 0.95)'
+        ctx.fillRect(panelX, panelY, panelWidth, panelHeight)
+        ctx.strokeStyle = '#FFD700'
+        ctx.lineWidth = 3
+        ctx.strokeRect(panelX, panelY, panelWidth, panelHeight)
+
+        // Title
+        ctx.save()
+        ctx.fillStyle = '#FFD700'
+        ctx.font = 'bold 28px monospace'
+        ctx.textAlign = 'center'
+        ctx.fillText('Victory!', CANVAS_WIDTH / 2, panelY + 45)
+
+        // Rewards section
+        ctx.font = FONTS.heading
+        ctx.fillStyle = '#ffffff'
+        let yPos = panelY + 90
+
+        // EXP
+        ctx.textAlign = 'left'
+        ctx.fillText('Experience:', panelX + 30, yPos)
+        ctx.textAlign = 'right'
+        ctx.fillStyle = '#66aaff'
+        ctx.fillText(`+${victoryRewards.experience} EXP`, panelX + panelWidth - 30, yPos)
+
+        // Gold
+        yPos += 35
+        ctx.textAlign = 'left'
+        ctx.fillStyle = '#ffffff'
+        ctx.fillText('Gold:', panelX + 30, yPos)
+        ctx.textAlign = 'right'
+        ctx.fillStyle = '#FFD700'
+        ctx.fillText(`+${victoryRewards.gold} G`, panelX + panelWidth - 30, yPos)
+
+        // Loot
+        if (victoryRewards.loot.length > 0) {
+          yPos += 35
+          ctx.textAlign = 'left'
+          ctx.fillStyle = '#ffffff'
+          ctx.fillText('Items:', panelX + 30, yPos)
+          ctx.textAlign = 'right'
+          ctx.fillStyle = '#88ff88'
+          ctx.fillText(victoryRewards.loot.join(', '), panelX + panelWidth - 30, yPos)
+        }
+
+        // Level ups
+        if (victoryRewards.levelUps.length > 0) {
+          yPos += 45
+          ctx.textAlign = 'center'
+          ctx.fillStyle = '#FFD700'
+          ctx.font = 'bold 16px monospace'
+          ctx.fillText('~ Level Up! ~', CANVAS_WIDTH / 2, yPos)
+
+          ctx.font = FONTS.normal
+          victoryRewards.levelUps.forEach((levelUp) => {
+            yPos += 25
+            ctx.fillStyle = '#ffffff'
+            ctx.fillText(`${levelUp.name} reached Level ${levelUp.newLevel}!`, CANVAS_WIDTH / 2, yPos)
+          })
+        }
+
+        // Continue prompt
+        ctx.font = FONTS.small
+        ctx.fillStyle = '#aaaacc'
+        ctx.textAlign = 'center'
+        ctx.fillText('Press Enter to continue', CANVAS_WIDTH / 2, panelY + panelHeight - 20)
+        ctx.restore()
+      } else {
+        drawCenteredText(ctx, 'Victory!', CANVAS_HEIGHT / 2, FONTS.title, '#ffff00')
+      }
     } else if (combatState.phase === 'defeat') {
       drawOverlay(ctx, 0.7, '#440000')
       drawCenteredText(ctx, 'Defeat...', CANVAS_HEIGHT / 2, FONTS.title, '#ff0000')
@@ -606,6 +731,8 @@ export function CombatSystem({
     pendingItem,
     getCurrentEntity,
     getCurrentPartyMember,
+    showVictorySummary,
+    victoryRewards,
   ])
 
   return (

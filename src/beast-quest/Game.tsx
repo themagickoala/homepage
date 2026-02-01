@@ -25,6 +25,7 @@ import { CombatSystem } from './combat/CombatSystem'
 import { DialogueUI } from './components/DialogueUI'
 import { InventoryUI } from './components/InventoryUI'
 import { GameMenu } from './components/GameMenu'
+import { Notifications, Notification } from './components/Notifications'
 import { createEnemyInstance } from './combat/enemies'
 import { DUNGEON_DIALOGUES, CHEST_CONTENTS } from './data/ferno-dungeon'
 import { ITEMS } from './data/items'
@@ -36,7 +37,20 @@ export function Game() {
   const [showTitle, setShowTitle] = useState(true)
   const [currentEnemies, setCurrentEnemies] = useState<Enemy[]>([])
   const [currentDialogue, setCurrentDialogue] = useState<Dialogue | null>(null)
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const playTimeRef = useRef<NodeJS.Timeout | null>(null)
+  const notificationIdRef = useRef(0)
+
+  // Add a notification
+  const addNotification = useCallback((type: Notification['type'], message: string, icon?: string) => {
+    const id = notificationIdRef.current++
+    setNotifications((prev) => [...prev, { id, type, message, icon }])
+  }, [])
+
+  // Remove a notification
+  const dismissNotification = useCallback((id: number) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
+  }, [])
 
   // Start new game
   const handleNewGame = useCallback(() => {
@@ -119,6 +133,9 @@ export function Game() {
       case 'chest':
         setGameState((prev) => {
           if (!prev) return prev
+          // Check if already opened
+          if (prev.exploration.openedChests.includes(entity.id)) return prev
+
           const contents = CHEST_CONTENTS[entity.id] || ['potion']
           const items = contents
             .map((id) => {
@@ -126,6 +143,17 @@ export function Game() {
               return item ? { item, quantity: 1 } : null
             })
             .filter((slot): slot is { item: typeof ITEMS[string]; quantity: number } => slot !== null)
+
+          // Show notification for each item obtained
+          const itemCounts = new Map<string, number>()
+          items.forEach((slot) => {
+            const count = itemCounts.get(slot.item.name) || 0
+            itemCounts.set(slot.item.name, count + slot.quantity)
+          })
+          itemCounts.forEach((quantity, name) => {
+            addNotification('item', `Obtained ${name}${quantity > 1 ? ` x${quantity}` : ''}!`)
+          })
+
           return openChest(prev, entity.id, items)
         })
         break
@@ -316,6 +344,9 @@ export function Game() {
 
   return (
     <div className="beast-quest-game">
+      {/* Notifications */}
+      <Notifications notifications={notifications} onDismiss={dismissNotification} />
+
       {/* Exploration */}
       {gameState.phase === 'exploring' && (
         <Dungeon
