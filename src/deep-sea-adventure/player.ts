@@ -10,15 +10,16 @@ export const PLAYER_COLORS: Record<
   yellow: { primary: '#f1c40f', secondary: '#d4ac0d', name: 'Yellow' },
   orange: { primary: '#e67e22', secondary: '#d35400', name: 'Orange' },
   purple: { primary: '#9b59b6', secondary: '#8e44ad', name: 'Purple' },
+  red: { primary: '#e74c3c', secondary: '#c0392b', name: 'Red' },
 }
 
-const COLOR_ORDER: PlayerColor[] = ['blue', 'green', 'yellow', 'orange', 'purple']
+export const ALL_COLORS: PlayerColor[] = ['blue', 'green', 'yellow', 'orange', 'purple', 'red']
 
 // Create a new player
-export function createPlayer(id: number): Player {
+export function createPlayer(id: number, color: PlayerColor): Player {
   return {
     id,
-    color: COLOR_ORDER[id],
+    color,
     position: -1, // In submarine
     direction: 'down',
     heldTreasures: [],
@@ -29,9 +30,9 @@ export function createPlayer(id: number): Player {
   }
 }
 
-// Create multiple players
-export function createPlayers(count: number): Player[] {
-  return Array.from({ length: count }, (_, i) => createPlayer(i))
+// Create multiple players with selected colors
+export function createPlayers(colors: PlayerColor[]): Player[] {
+  return colors.map((color, i) => createPlayer(i, color))
 }
 
 // Reset player for new round (keep scored treasures)

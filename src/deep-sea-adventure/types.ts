@@ -22,7 +22,7 @@ export type PathSpace =
   | { type: 'removed' }
 
 // Player colors
-export type PlayerColor = 'blue' | 'green' | 'yellow' | 'orange' | 'purple'
+export type PlayerColor = 'blue' | 'green' | 'yellow' | 'orange' | 'purple' | 'red'
 
 export interface Player {
   id: number

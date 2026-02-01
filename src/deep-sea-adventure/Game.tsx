@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { GameState, PathNode, BubbleParticle } from './types'
+import { GameState, PathNode, BubbleParticle, PlayerColor } from './types'
 import {
   createGameState,
   getCurrentPlayer,
@@ -31,9 +31,9 @@ export function Game() {
   const [gameStarted, setGameStarted] = useState(false)
   const [, forceUpdate] = useState({})
 
-  // Start a new game with specified player count
-  const startGame = useCallback((playerCount: number) => {
-    gameStateRef.current = createGameState(playerCount)
+  // Start a new game with selected player colors
+  const startGame = useCallback((selectedColors: PlayerColor[]) => {
+    gameStateRef.current = createGameState(selectedColors)
     pathNodesRef.current = generatePathNodes(32)
     bubblesRef.current = []
     resetBubbleSpawner()

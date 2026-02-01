@@ -1,6 +1,7 @@
 import {
   GameState,
   Player,
+  PlayerColor,
   RoundState,
   TurnPhase,
   DiceRoll,
@@ -13,9 +14,9 @@ import { rollDice } from './dice'
 const INITIAL_OXYGEN = 25
 
 // Create initial game state
-export function createGameState(playerCount: number): GameState {
-  const players = createPlayers(playerCount)
-  const startingPlayer = Math.floor(Math.random() * playerCount)
+export function createGameState(selectedColors: PlayerColor[]): GameState {
+  const players = createPlayers(selectedColors)
+  const startingPlayer = Math.floor(Math.random() * selectedColors.length)
 
   return {
     players,
