@@ -38,7 +38,7 @@ export function Game() {
   const [currentEnemies, setCurrentEnemies] = useState<Enemy[]>([])
   const [currentDialogue, setCurrentDialogue] = useState<Dialogue | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const playTimeRef = useRef<NodeJS.Timeout | null>(null)
+  const playTimeRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const notificationIdRef = useRef(0)
 
   // Add a notification
