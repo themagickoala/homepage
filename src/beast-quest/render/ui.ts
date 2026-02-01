@@ -114,6 +114,7 @@ export function drawCharacterStats(
   drawPanel(ctx, x, y, panelWidth, panelHeight)
 
   ctx.save()
+  ctx.textAlign = 'left'
 
   // Name
   ctx.fillStyle = UI_COLORS.textPrimary
@@ -210,6 +211,7 @@ export function drawMenu(
 
   ctx.save()
   ctx.font = FONTS.normal
+  ctx.textAlign = 'left'
 
   options.forEach((option, index) => {
     const itemY = y + padding + index * itemHeight + 16
@@ -338,6 +340,7 @@ export function drawDialogueBox(
   drawPanel(ctx, 20, boxY, CANVAS_WIDTH - 40, boxHeight)
 
   ctx.save()
+  ctx.textAlign = 'left'
 
   // Speaker name
   if (speaker) {
@@ -401,6 +404,7 @@ export function drawBattleLog(
 
   ctx.save()
   ctx.font = FONTS.small
+  ctx.textAlign = 'left'
 
   visibleMessages.forEach((entry, index) => {
     const y = logY + 16 + index * lineHeight

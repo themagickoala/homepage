@@ -498,10 +498,12 @@ export function CombatSystem({
       ctx.fillRect(x - 30, y + 40, 60 * hpPercent, 8)
 
       // Draw name
+      ctx.save()
       ctx.fillStyle = UI_COLORS.textPrimary
       ctx.font = FONTS.small
       ctx.textAlign = 'center'
       ctx.fillText(entity.name, x, y + 60)
+      ctx.restore()
 
       // Highlight if targeted
       if (menuState === 'targets') {
