@@ -35,6 +35,9 @@ interface DungeonProps {
   onRoomChange: (roomId: string, position: IsoPosition) => void
 }
 
+// Movement animation duration in milliseconds
+const MOVE_DURATION = 150
+
 export function Dungeon({
   explorationState,
   party,
@@ -49,17 +52,53 @@ export function Dungeon({
   const [currentRoom, setCurrentRoom] = useState<DungeonRoom | null>(null)
   const [blockedMessage, setBlockedMessage] = useState<string | null>(null)
 
+  // Movement animation state
+  const [visualPosition, setVisualPosition] = useState<{ col: number; row: number }>(
+    explorationState.playerPosition
+  )
+  const moveStartTime = useRef<number | null>(null)
+  const moveStartPos = useRef<IsoPosition | null>(null)
+  const moveEndPos = useRef<IsoPosition | null>(null)
+
   // Load current room
   useEffect(() => {
     const room = getRoom(explorationState.currentRoomId)
     setCurrentRoom(room || null)
+    // Reset visual position immediately on room change (no animation)
+    setVisualPosition(explorationState.playerPosition)
+    moveStartTime.current = null
+    moveStartPos.current = null
+    moveEndPos.current = null
   }, [explorationState.currentRoomId])
 
   // Animation loop
   useEffect(() => {
     let frameId: number
-    const animate = () => {
+    const animate = (timestamp: number) => {
       setAnimationFrame((f) => f + 1)
+
+      // Update movement animation
+      if (moveStartTime.current !== null && moveStartPos.current && moveEndPos.current) {
+        const elapsed = timestamp - moveStartTime.current
+        const progress = Math.min(1, elapsed / MOVE_DURATION)
+
+        // Ease out cubic for smooth deceleration
+        const eased = 1 - Math.pow(1 - progress, 3)
+
+        // Interpolate position
+        const newCol = moveStartPos.current.col + (moveEndPos.current.col - moveStartPos.current.col) * eased
+        const newRow = moveStartPos.current.row + (moveEndPos.current.row - moveStartPos.current.row) * eased
+
+        setVisualPosition({ col: newCol, row: newRow })
+
+        // Animation complete
+        if (progress >= 1) {
+          moveStartTime.current = null
+          moveStartPos.current = null
+          moveEndPos.current = null
+        }
+      }
+
       frameId = requestAnimationFrame(animate)
     }
     frameId = requestAnimationFrame(animate)
@@ -145,8 +184,12 @@ export function Dungeon({
       )
       if (blockingEntity && blockingEntity.type !== 'trigger') return
 
-      // Move
+      // Start movement animation
       setIsMoving(true)
+      moveStartTime.current = performance.now()
+      moveStartPos.current = { col, row }
+      moveEndPos.current = { col: newCol, row: newRow }
+
       const newState: ExplorationState = {
         ...explorationState,
         playerPosition: { col: newCol, row: newRow },
@@ -156,11 +199,11 @@ export function Dungeon({
 
       onMove(newState)
 
-      // Check for encounter after movement
+      // Check for encounter after movement animation completes
       setTimeout(() => {
         setIsMoving(false)
         checkEncounter({ col: newCol, row: newRow })
-      }, 150)
+      }, MOVE_DURATION)
     },
     [explorationState, currentRoom, isMoving, onMove, checkEncounter, onRoomChange]
   )
@@ -275,7 +318,8 @@ export function Dungeon({
 
     // Get visible tiles
     const visibleTiles = getVisibleTiles(currentRoom.width, currentRoom.height)
-    const playerDepth = explorationState.playerPosition.row + explorationState.playerPosition.col
+    // Use visual position for depth calculation during animation
+    const playerDepth = visualPosition.row + visualPosition.col
     let playerDrawn = false
     const drawnEntities = new Set<string>()
 
@@ -380,7 +424,7 @@ export function Dungeon({
         if (!playerDrawn && playerDepth <= tileDepth) {
           drawCharacterSprite(
             ctx,
-            explorationState.playerPosition,
+            visualPosition,
             'tom',
             explorationState.playerDirection,
             isMoving,
@@ -411,7 +455,7 @@ export function Dungeon({
     if (!playerDrawn) {
       drawCharacterSprite(
         ctx,
-        explorationState.playerPosition,
+        visualPosition,
         'tom',
         explorationState.playerDirection,
         isMoving,
@@ -451,7 +495,7 @@ export function Dungeon({
       ctx.fillText(blockedMessage, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2)
       ctx.restore()
     }
-  }, [currentRoom, explorationState, party, animationFrame, isMoving, blockedMessage])
+  }, [currentRoom, explorationState, party, animationFrame, isMoving, blockedMessage, visualPosition])
 
   return (
     <canvas
