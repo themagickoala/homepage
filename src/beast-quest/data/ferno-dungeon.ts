@@ -208,6 +208,7 @@ const puzzleRoom: DungeonRoom = {
       direction: 'east',
       targetRoomId: 'volcanic_passage',
       targetPosition: { col: 1, row: 5 },
+      requiredPuzzle: 'puzzle_room_bridge',
     },
   ],
 }

@@ -23,7 +23,7 @@ import { TILE_COLORS, getTileHeight, isWalkable } from './tiles'
 import { drawCharacterSprite } from '../render/sprites'
 import { drawExplorationHUD, drawControlHints } from '../render/ui'
 import { getRoom, getEncounterZone } from '../data/ferno-dungeon'
-import { canInteract } from './puzzles'
+import { canInteract, DUNGEON_PUZZLES, checkPuzzleSolved, getPuzzleHint } from './puzzles'
 import { getRandomEncounter } from '../combat/enemies'
 
 interface DungeonProps {
@@ -47,6 +47,7 @@ export function Dungeon({
   const [animationFrame, setAnimationFrame] = useState(0)
   const [isMoving, setIsMoving] = useState(false)
   const [currentRoom, setCurrentRoom] = useState<DungeonRoom | null>(null)
+  const [blockedMessage, setBlockedMessage] = useState<string | null>(null)
 
   // Load current room
   useEffect(() => {
@@ -119,6 +120,16 @@ export function Dungeon({
         // Check for room connections
         const connection = currentRoom.connections.find((c) => c.direction === direction)
         if (connection) {
+          // Check if connection requires a puzzle to be solved
+          if (connection.requiredPuzzle) {
+            const puzzle = DUNGEON_PUZZLES[connection.requiredPuzzle]
+            if (puzzle && !checkPuzzleSolved(puzzle, explorationState.activatedSwitches)) {
+              // Show blocked message
+              setBlockedMessage(getPuzzleHint(connection.requiredPuzzle))
+              setTimeout(() => setBlockedMessage(null), 3000)
+              return
+            }
+          }
           onRoomChange(connection.targetRoomId, connection.targetPosition)
         }
         return
@@ -413,7 +424,34 @@ export function Dungeon({
 
     // Draw control hints
     drawControlHints(ctx, ['Arrow Keys: Move', 'Enter: Interact', 'Esc: Menu'])
-  }, [currentRoom, explorationState, party, animationFrame, isMoving])
+
+    // Draw blocked message if present
+    if (blockedMessage) {
+      ctx.save()
+      // Draw message box
+      const boxWidth = 400
+      const boxHeight = 60
+      const boxX = (CANVAS_WIDTH - boxWidth) / 2
+      const boxY = CANVAS_HEIGHT / 2 - boxHeight / 2
+
+      // Background
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
+      ctx.fillRect(boxX, boxY, boxWidth, boxHeight)
+
+      // Border
+      ctx.strokeStyle = '#aa6622'
+      ctx.lineWidth = 3
+      ctx.strokeRect(boxX, boxY, boxWidth, boxHeight)
+
+      // Text
+      ctx.fillStyle = '#ffcc88'
+      ctx.font = 'bold 16px monospace'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(blockedMessage, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2)
+      ctx.restore()
+    }
+  }, [currentRoom, explorationState, party, animationFrame, isMoving, blockedMessage])
 
   return (
     <canvas

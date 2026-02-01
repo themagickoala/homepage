@@ -244,6 +244,7 @@ export interface RoomConnection {
   direction: Direction
   targetRoomId: string
   targetPosition: IsoPosition
+  requiredPuzzle?: string // Puzzle ID that must be solved to use this connection
 }
 
 export interface EncounterZone {
