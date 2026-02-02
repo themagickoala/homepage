@@ -226,13 +226,14 @@ export function CombatSystem({
         case 'defend':
           if (combatState) {
             const { state, log } = executeDefend(combatState, currentEntity.id)
-            setCombatState(state)
+            setCombatState({ ...state, phase: 'executing_action' })
             setBattleLog((prev) => [...prev, log])
             setTimeout(nextTurn, 500)
           }
           break
 
         case 'flee':
+          setCombatState((prev) => (prev ? { ...prev, phase: 'executing_action' } : prev))
           if (canFlee && Math.random() < 0.5) {
             setBattleLog((prev) => [
               ...prev,
@@ -299,7 +300,8 @@ export function CombatSystem({
         logs.push(result.log)
       }
 
-      setCombatState(newState)
+      // Set phase to executing_action to block further input during the delay
+      setCombatState({ ...newState, phase: 'executing_action' })
       setBattleLog((prev) => [...prev, ...logs])
 
       // Check combat end
