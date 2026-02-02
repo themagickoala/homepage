@@ -51,3 +51,9 @@ export interface WakeParticle {
   life: number
   maxLife: number
 }
+
+export type GameMode = 'menu' | 'single-player' | 'two-player'
+
+export interface BestTimes {
+  [courseId: string]: number // time in milliseconds
+}
