@@ -15,18 +15,30 @@ import {
   getAvailableActions,
   getFinalRankings,
 } from './gameState'
-import { render, generatePathNodes, CANVAS_WIDTH, CANVAS_HEIGHT, renderCurrentPlayerIndicator } from './render'
+import { render, generatePathNodes, CANVAS_WIDTH, CANVAS_HEIGHT, renderCurrentPlayerIndicator, VisualPosition } from './render'
 import { spawnBubbles, updateBubbles, resetBubbleSpawner } from './bubbles'
 import { PLAYER_COLORS, calculateScore } from './player'
 import { PlayerSetup } from './components/PlayerSetup'
 import { GameControls } from './components/GameControls'
 import { Scoreboard } from './components/Scoreboard'
 
+// Animation state for smooth movement
+interface MoveAnimation {
+  playerId: number
+  fromPosition: number
+  toPosition: number
+  startTime: number
+  duration: number // ms
+}
+
+const HOP_ANIMATION_DURATION = 200 // ms per hop
+
 export function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const gameStateRef = useRef<GameState | null>(null)
   const pathNodesRef = useRef<PathNode[]>([])
   const bubblesRef = useRef<BubbleParticle[]>([])
+  const moveAnimationRef = useRef<MoveAnimation | null>(null)
 
   const [gameStarted, setGameStarted] = useState(false)
   const [, forceUpdate] = useState({})
@@ -52,23 +64,42 @@ export function Game() {
         break
 
       case 'roll':
+        const currentPlayer = getCurrentPlayer(state)
+        const fromPosition = currentPlayer.position
         const { state: rolledState } = handleRollDice(state)
         gameStateRef.current = rolledState
 
-        // After a short delay, handle the move
+        // After a short delay, handle the move with animation
         setTimeout(() => {
           if (gameStateRef.current) {
+            const beforeMove = getCurrentPlayer(gameStateRef.current)
             gameStateRef.current = handleMove(gameStateRef.current)
+            const afterMove = getCurrentPlayer(gameStateRef.current)
+
+            // Start movement animation if position changed
+            if (beforeMove.position !== afterMove.position || fromPosition !== afterMove.position) {
+              const numSpaces = Math.abs(afterMove.position - fromPosition)
+              moveAnimationRef.current = {
+                playerId: afterMove.id,
+                fromPosition: fromPosition,
+                toPosition: afterMove.position,
+                startTime: performance.now(),
+                duration: Math.max(numSpaces * HOP_ANIMATION_DURATION, HOP_ANIMATION_DURATION),
+              }
+            }
+
             forceUpdate({})
 
-            // If player returned to submarine or turn ended, advance to next player
+            // If player returned to submarine or turn ended, advance to next player after animation
             if (gameStateRef.current.turnPhase === 'turn_end') {
+              const animDuration = moveAnimationRef.current?.duration ?? HOP_ANIMATION_DURATION
               setTimeout(() => {
                 if (gameStateRef.current) {
+                  moveAnimationRef.current = null // Clear animation
                   gameStateRef.current = nextTurn(gameStateRef.current)
                   forceUpdate({})
                 }
-              }, 300)
+              }, animDuration + 100)
             }
           }
         }, 500)
@@ -151,9 +182,56 @@ export function Game() {
       bubblesRef.current = spawnBubbles(bubblesRef.current, deltaTime)
       bubblesRef.current = updateBubbles(bubblesRef.current, deltaTime)
 
+      // Calculate visual positions for animation
+      let visualPositions: Map<number, VisualPosition> | undefined
+      if (moveAnimationRef.current) {
+        const anim = moveAnimationRef.current
+        const elapsed = currentTime - anim.startTime
+        const progress = Math.min(elapsed / anim.duration, 1)
+
+        const numSpaces = Math.abs(anim.toPosition - anim.fromPosition)
+        const direction = anim.toPosition > anim.fromPosition ? 1 : -1
+
+        let visualPos: number
+        let hopOffset = 0
+
+        if (numSpaces === 0) {
+          // No movement
+          visualPos = anim.fromPosition
+        } else {
+          // Calculate which hop we're on (0-indexed)
+          const totalHops = numSpaces
+          const hopIndex = Math.min(Math.floor(progress * totalHops), totalHops - 1)
+          const hopProgress = (progress * totalHops) - hopIndex
+
+          // Easing for the hop within each space (ease-in-out for bouncy feel)
+          const easedHopProgress = hopProgress < 0.5
+            ? 2 * hopProgress * hopProgress
+            : 1 - Math.pow(-2 * hopProgress + 2, 2) / 2
+
+          // Current hop start and end positions
+          const hopStart = anim.fromPosition + hopIndex * direction
+          const hopEnd = hopStart + direction
+
+          // Interpolate within the current hop
+          visualPos = hopStart + (hopEnd - hopStart) * easedHopProgress
+
+          // Calculate hop height (arc using sine) - negative for up
+          hopOffset = -Math.sin(hopProgress * Math.PI) * 25
+        }
+
+        visualPositions = new Map()
+        visualPositions.set(anim.playerId, { position: visualPos, hopOffset })
+
+        // Clear animation when complete
+        if (progress >= 1) {
+          moveAnimationRef.current = null
+        }
+      }
+
       // Render
       if (gameStateRef.current) {
-        render(ctx, gameStateRef.current, pathNodesRef.current, bubblesRef.current)
+        render(ctx, gameStateRef.current, pathNodesRef.current, bubblesRef.current, visualPositions)
 
         // Render current player indicator
         const player = getCurrentPlayer(gameStateRef.current)

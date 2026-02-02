@@ -1,0 +1,8 @@
+- [x] Mega treasures are not displayed correctly - they should be a stack of treasures
+- [x] When a player continues forward with no spaces left to go, they shouldn't be able to join another player on a shared space
+- [x] The path should be more curved rather than squared off
+- [x] The character movement should be animated
+- [x] Allow players to see the treasures they've banked and the individual points of each treasure
+- [x] Animate movement as hop-by-hop instead of direct interpolation
+- [x] Fix players not being able to return to submarine when moving up
+- [ ] Dropped treasures from drowned players should appear as mega-treasure stacks at the end of the path

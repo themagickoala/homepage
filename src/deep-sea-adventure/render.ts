@@ -22,11 +22,13 @@ const PATH_ROW_HEIGHT = 130
 const PATH_MARGIN_X = 80
 const SPACE_SIZE = 40
 
-// Generate path node positions for rendering
+// Generate path node positions for rendering with smooth curves
 export function generatePathNodes(pathLength: number): PathNode[] {
   const nodes: PathNode[] = []
   const spacesPerRow = 8
   const spaceWidth = (CANVAS_WIDTH - 2 * PATH_MARGIN_X) / (spacesPerRow - 1)
+  const waveAmplitude = 25 // How much the path curves up/down within a row
+  const turnCurveOffset = 40 // Extra Y offset at turns to smooth the corners
 
   for (let i = 0; i < pathLength; i++) {
     const row = Math.floor(i / spacesPerRow)
@@ -35,14 +37,40 @@ export function generatePathNodes(pathLength: number): PathNode[] {
 
     const adjustedCol = isReversed ? spacesPerRow - 1 - col : col
 
+    // Calculate progress along the row (0 to 1)
+    const rowProgress = col / (spacesPerRow - 1)
+
+    // Create a sine wave offset for smooth curvature within each row
+    // The wave dips in the middle of each row
+    const waveOffset = Math.sin(rowProgress * Math.PI) * waveAmplitude
+
+    // Add extra curve at the start/end of rows to smooth the turns
+    let turnOffset = 0
+    if (col === 0 && row > 0) {
+      // First node of a row (except first row) - coming from a turn
+      turnOffset = turnCurveOffset * 0.5
+    } else if (col === spacesPerRow - 1 && row < Math.floor((pathLength - 1) / spacesPerRow)) {
+      // Last node of a row (except last row) - about to turn
+      turnOffset = turnCurveOffset * 0.5
+    } else if (col === 1 || col === spacesPerRow - 2) {
+      // Second or second-to-last nodes - partial curve
+      turnOffset = turnCurveOffset * 0.2
+    }
+
     nodes.push({
       index: i,
       x: PATH_MARGIN_X + adjustedCol * spaceWidth,
-      y: PATH_START_Y + row * PATH_ROW_HEIGHT,
+      y: PATH_START_Y + row * PATH_ROW_HEIGHT + waveOffset + turnOffset,
     })
   }
 
   return nodes
+}
+
+// Visual position with optional hop offset
+export interface VisualPosition {
+  position: number
+  hopOffset: number // Vertical offset for hop animation (negative = up)
 }
 
 // Main render function
@@ -50,7 +78,8 @@ export function render(
   ctx: CanvasRenderingContext2D,
   state: GameState,
   pathNodes: PathNode[],
-  bubbles: BubbleParticle[]
+  bubbles: BubbleParticle[],
+  visualPositions?: Map<number, VisualPosition> // Optional animated positions (playerId -> visual position + hop)
 ): void {
   // Clear canvas
   ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
@@ -60,7 +89,7 @@ export function render(
   renderBubbles(ctx, bubbles)
   renderSubmarine(ctx)
   renderPath(ctx, state.round.path, pathNodes)
-  renderPlayers(ctx, state.players, pathNodes)
+  renderPlayers(ctx, state.players, pathNodes, visualPositions)
   renderOxygenMeter(ctx, state.round.oxygen)
   renderRoundIndicator(ctx, state.round.roundNumber)
 
@@ -193,38 +222,90 @@ function renderTreasure(
   ctx.save()
   ctx.translate(x, y)
 
-  // Draw shape based on level
-  ctx.fillStyle = config.color
-  ctx.strokeStyle = '#FFFFFF'
-  ctx.lineWidth = 2
+  // For mega-treasures, draw a stack of shapes
+  if (treasure.isMegaTreasure && treasure.componentCount > 1) {
+    const stackCount = Math.min(treasure.componentCount, 3) // Show up to 3 stacked
+    const stackOffset = 4 // Pixels between each stacked shape
 
-  ctx.beginPath()
-  switch (config.shape) {
-    case 'triangle':
-      drawTriangle(ctx, size)
-      break
-    case 'square':
-      drawSquare(ctx, size)
-      break
-    case 'hexagon':
-      drawHexagon(ctx, size)
-      break
-    case 'octagon':
-      drawOctagon(ctx, size)
-      break
-  }
-  ctx.fill()
-  ctx.stroke()
+    // Draw from back to front (bottom to top of stack)
+    for (let i = stackCount - 1; i >= 0; i--) {
+      const offsetY = -i * stackOffset
+      const offsetX = i * 2 // Slight horizontal offset for 3D effect
 
-  // Draw dots for level indicator
-  drawLevelDots(ctx, treasure.level, config.dotColor)
+      ctx.save()
+      ctx.translate(offsetX, offsetY)
 
-  // Mega-treasure indicator
-  if (treasure.isMegaTreasure) {
-    ctx.fillStyle = '#FFD700'
-    ctx.font = 'bold 10px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText(`x${treasure.componentCount}`, 0, size + 12)
+      // Shadow for depth
+      if (i > 0) {
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
+        ctx.shadowBlur = 3
+        ctx.shadowOffsetX = -2
+        ctx.shadowOffsetY = 2
+      }
+
+      // Draw shape based on level
+      ctx.fillStyle = config.color
+      ctx.strokeStyle = '#FFFFFF'
+      ctx.lineWidth = 2
+
+      ctx.beginPath()
+      switch (config.shape) {
+        case 'triangle':
+          drawTriangle(ctx, size)
+          break
+        case 'square':
+          drawSquare(ctx, size)
+          break
+        case 'hexagon':
+          drawHexagon(ctx, size)
+          break
+        case 'octagon':
+          drawOctagon(ctx, size)
+          break
+      }
+      ctx.fill()
+      ctx.stroke()
+
+      ctx.restore()
+    }
+
+    // Draw dots only on top treasure
+    drawLevelDots(ctx, treasure.level, config.dotColor)
+
+    // Gold glow for mega treasure
+    ctx.shadowColor = '#FFD700'
+    ctx.shadowBlur = 10
+    ctx.strokeStyle = '#FFD700'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.arc(0, 0, size + 5, 0, Math.PI * 2)
+    ctx.stroke()
+  } else {
+    // Regular treasure - draw single shape
+    ctx.fillStyle = config.color
+    ctx.strokeStyle = '#FFFFFF'
+    ctx.lineWidth = 2
+
+    ctx.beginPath()
+    switch (config.shape) {
+      case 'triangle':
+        drawTriangle(ctx, size)
+        break
+      case 'square':
+        drawSquare(ctx, size)
+        break
+      case 'hexagon':
+        drawHexagon(ctx, size)
+        break
+      case 'octagon':
+        drawOctagon(ctx, size)
+        break
+    }
+    ctx.fill()
+    ctx.stroke()
+
+    // Draw dots for level indicator
+    drawLevelDots(ctx, treasure.level, config.dotColor)
   }
 
   ctx.restore()
@@ -332,46 +413,86 @@ function renderEmptySpace(ctx: CanvasRenderingContext2D, x: number, y: number): 
   ctx.restore()
 }
 
+// Helper to get position coordinates
+function getPositionCoords(
+  position: number,
+  pathNodes: PathNode[]
+): { x: number; y: number } {
+  if (position < 0) {
+    // In submarine
+    return { x: CANVAS_WIDTH / 2, y: SUBMARINE_Y + 30 }
+  } else if (position < pathNodes.length) {
+    return { x: pathNodes[position].x, y: pathNodes[position].y }
+  } else {
+    // Fallback to last node
+    const lastNode = pathNodes[pathNodes.length - 1]
+    return { x: lastNode.x, y: lastNode.y }
+  }
+}
+
+// Interpolate between two positions (handles fractional positions)
+function interpolatePosition(
+  visualPos: number,
+  pathNodes: PathNode[]
+): { x: number; y: number } {
+  if (visualPos < 0) {
+    // Moving to/from submarine - interpolate with first node
+    // visualPos goes from 0 to -1 (0 = at first node, -1 = at submarine)
+    const progress = -visualPos // 0 to 1
+    const subCoords = getPositionCoords(-1, pathNodes)
+    const firstCoords = getPositionCoords(0, pathNodes)
+    return {
+      x: firstCoords.x + (subCoords.x - firstCoords.x) * progress,
+      y: firstCoords.y + (subCoords.y - firstCoords.y) * progress,
+    }
+  }
+
+  const floorPos = Math.floor(visualPos)
+  const ceilPos = Math.ceil(visualPos)
+  const fraction = visualPos - floorPos
+
+  if (fraction === 0 || floorPos === ceilPos) {
+    return getPositionCoords(floorPos, pathNodes)
+  }
+
+  const fromCoords = getPositionCoords(floorPos, pathNodes)
+  const toCoords = getPositionCoords(ceilPos, pathNodes)
+
+  return {
+    x: fromCoords.x + (toCoords.x - fromCoords.x) * fraction,
+    y: fromCoords.y + (toCoords.y - fromCoords.y) * fraction,
+  }
+}
+
 // Render players/divers
 function renderPlayers(
   ctx: CanvasRenderingContext2D,
   players: Player[],
-  pathNodes: PathNode[]
+  pathNodes: PathNode[],
+  visualPositions?: Map<number, VisualPosition>
 ): void {
-  // Group players by position for stacking
-  const playersByPosition = new Map<number, Player[]>()
-
+  // Render each player individually (for animation support)
   for (const player of players) {
-    const pos = player.position
-    if (!playersByPosition.has(pos)) {
-      playersByPosition.set(pos, [])
-    }
-    playersByPosition.get(pos)!.push(player)
-  }
-
-  // Render each group
-  for (const [position, playersAtPos] of playersByPosition) {
     let x: number, y: number
+    let hopOffset = 0
 
-    if (position === -1) {
-      // In submarine
-      x = CANVAS_WIDTH / 2
-      y = SUBMARINE_Y + 30
-    } else if (position < pathNodes.length) {
-      x = pathNodes[position].x
-      y = pathNodes[position].y
+    // Check if this player has an animated visual position
+    const visualPosData = visualPositions?.get(player.id)
+
+    if (visualPosData !== undefined) {
+      // Animated position - interpolate
+      const coords = interpolatePosition(visualPosData.position, pathNodes)
+      x = coords.x
+      y = coords.y
+      hopOffset = visualPosData.hopOffset
     } else {
-      continue
+      // Static position
+      const coords = getPositionCoords(player.position, pathNodes)
+      x = coords.x
+      y = coords.y
     }
 
-    // Stack players horizontally with slight offset
-    const totalWidth = (playersAtPos.length - 1) * 15
-    let offsetX = -totalWidth / 2
-
-    for (const player of playersAtPos) {
-      renderDiver(ctx, player, x + offsetX, y - 20)
-      offsetX += 15
-    }
+    renderDiver(ctx, player, x, y - 20 + hopOffset)
   }
 }
 

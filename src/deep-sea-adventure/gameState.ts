@@ -126,35 +126,49 @@ export function handleMove(state: GameState): GameState {
     }
 
     if (newPosition === -1 && movement > 0) {
-      newPosition = 0 // At least move to first space
+      // Find the first unoccupied space
+      for (let i = 0; i < state.round.path.length; i++) {
+        const space = state.round.path[i]
+        if (space.type !== 'removed' && !otherPositions.includes(i)) {
+          newPosition = i
+          break
+        }
+      }
     }
   } else if (player.direction === 'down') {
     // Moving down (away from submarine)
-    newPosition = player.position
+    // Track the last valid position we can land on
+    let lastValidPosition = player.position
+    let currentPos = player.position
 
-    while (spacesToMove > 0 && newPosition < state.round.path.length - 1) {
-      newPosition++
-      const space = state.round.path[newPosition]
-      if (space.type !== 'removed' && !otherPositions.includes(newPosition)) {
+    while (spacesToMove > 0 && currentPos < state.round.path.length - 1) {
+      currentPos++
+      const space = state.round.path[currentPos]
+      if (space.type !== 'removed' && !otherPositions.includes(currentPos)) {
         spacesToMove--
+        lastValidPosition = currentPos
       }
     }
+
+    newPosition = lastValidPosition
   } else {
     // Moving up (toward submarine)
-    newPosition = player.position
+    let currentPos = player.position
 
-    while (spacesToMove > 0) {
-      newPosition--
-      if (newPosition < 0) {
-        // Reached submarine
-        newPosition = -1
+    while (spacesToMove > 0 && currentPos >= 0) {
+      currentPos--
+      if (currentPos < 0) {
+        // Reached submarine - use remaining moves and stop
+        spacesToMove = 0
         break
       }
-      const space = state.round.path[newPosition]
-      if (space.type !== 'removed' && !otherPositions.includes(newPosition)) {
+      const space = state.round.path[currentPos]
+      if (space.type !== 'removed' && !otherPositions.includes(currentPos)) {
         spacesToMove--
       }
     }
+
+    newPosition = currentPos
   }
 
   // Update player position

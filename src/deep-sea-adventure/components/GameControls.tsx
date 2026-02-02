@@ -68,6 +68,29 @@ export function GameControls({
         </div>
       )}
 
+      {player.scoredTreasures.length > 0 && (
+        <div className="banked-treasures">
+          <div className="section-title">
+            Banked Treasures ({player.scoredTreasures.reduce((sum, t) => sum + t.points, 0)} pts)
+          </div>
+          <div className="treasure-list banked">
+            {player.scoredTreasures.map((treasure) => (
+              <div
+                key={treasure.id}
+                className="banked-treasure"
+                style={{ backgroundColor: TREASURE_CONFIG[treasure.level].color }}
+              >
+                <span className="treasure-level">Lvl {treasure.level}</span>
+                <span className="treasure-points">{treasure.points} pts</span>
+                {treasure.isMegaTreasure && (
+                  <span className="mega-badge">x{treasure.componentCount}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="action-buttons">
         {turnPhase === 'pre_roll' && (
           <>
