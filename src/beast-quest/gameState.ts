@@ -33,6 +33,7 @@ export function createNewGameState(): GameState {
     openedChests: [],
     activatedSwitches: [],
     stepsSinceLastEncounter: 0,
+    stepsForMpRecovery: 0,
   }
 
   return {
@@ -340,6 +341,7 @@ export function addExperience(state: GameState, amount: number): GameState {
 
     const newMaxHp = member.stats.maxHp + bonusMaxHp
     const newMaxMp = member.stats.maxMp + bonusMaxMp
+    const didLevelUp = newLevel > member.stats.level
 
     return {
       ...member,
@@ -353,8 +355,9 @@ export function addExperience(state: GameState, amount: number): GameState {
         experience: newExp,
         experienceToNextLevel: expToNext,
         level: newLevel,
-        currentHp: newMaxHp, // Heal on level up
-        currentMp: newMaxMp,
+        // Only heal to full on level up, otherwise preserve current HP/MP
+        currentHp: didLevelUp ? newMaxHp : member.stats.currentHp,
+        currentMp: didLevelUp ? newMaxMp : member.stats.currentMp,
       },
     }
   })

@@ -203,6 +203,7 @@ export function Dungeon({
         playerPosition: { col: newCol, row: newRow },
         playerDirection: direction,
         stepsSinceLastEncounter: explorationState.stepsSinceLastEncounter + 1,
+        stepsForMpRecovery: explorationState.stepsForMpRecovery + 1,
       }
 
       onMove(newState)
@@ -256,19 +257,19 @@ export function Dungeon({
       onInteract(entity)
     }
 
-    // Check for tile interactions (save point, stairs)
+    // Check for tile interactions (healing pool, stairs)
     if (targetRow >= 0 && targetRow < currentRoom.height && targetCol >= 0 && targetCol < currentRoom.width) {
       const tile = currentRoom.tiles[targetRow][targetCol]
-      if (tile === 'save_point') {
-        // Trigger save menu
+      if (tile === 'healing_pool') {
+        // Trigger healing
         onInteract({
-          id: 'save_point',
+          id: 'healing_pool',
           type: 'trigger',
           position: { col: targetCol, row: targetRow },
-          sprite: 'save_point',
+          sprite: 'healing_pool',
           direction: 'south',
           interactable: true,
-          metadata: { action: 'save' },
+          metadata: { action: 'heal' },
         })
       } else if (tile === 'stairs_up' || tile === 'stairs_down') {
         // Find room connection
@@ -391,6 +392,34 @@ export function Dungeon({
         ctx.stroke()
         ctx.globalAlpha = 1
       }
+
+      // Draw interaction indicator if player can interact with this entity
+      const roundedPlayerPos = {
+        col: Math.round(visualPosition.col),
+        row: Math.round(visualPosition.row),
+      }
+      if (canInteract(entity, roundedPlayerPos, explorationState)) {
+        const indicatorPulse = 0.7 + Math.sin(animationFrame * 0.15) * 0.3
+        const indicatorBob = Math.sin(animationFrame * 0.1) * 3
+
+        // Draw floating "!" indicator
+        ctx.globalAlpha = indicatorPulse
+        ctx.fillStyle = '#ffcc00'
+        ctx.beginPath()
+        ctx.arc(screenPos.x, screenPos.y - 35 + indicatorBob, 10, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.strokeStyle = '#aa8800'
+        ctx.lineWidth = 2
+        ctx.stroke()
+
+        // Draw "!" text
+        ctx.fillStyle = '#000000'
+        ctx.font = 'bold 14px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('!', screenPos.x, screenPos.y - 35 + indicatorBob)
+        ctx.globalAlpha = 1
+      }
     }
 
     // First pass: Draw all floor tiles
@@ -411,11 +440,11 @@ export function Dungeon({
           drawIsometricTile(ctx, tilePos, colors.highlight)
           ctx.globalAlpha = 1
         }
-        if (tileType === 'save_point') {
+        if (tileType === 'healing_pool') {
           const glowIntensity = 0.5 + Math.sin(animationFrame * 0.08) * 0.3
           ctx.globalAlpha = glowIntensity
           const screenPos = isoToScreen(tilePos)
-          ctx.fillStyle = '#6a8aaa'
+          ctx.fillStyle = '#6aaa8a'
           ctx.beginPath()
           ctx.arc(screenPos.x, screenPos.y, 10, 0, Math.PI * 2)
           ctx.fill()

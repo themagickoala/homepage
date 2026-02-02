@@ -8,7 +8,7 @@ import './Notifications.css'
 
 export interface Notification {
   id: number
-  type: 'item' | 'levelup' | 'gold' | 'exp' | 'info'
+  type: 'item' | 'levelup' | 'gold' | 'exp' | 'info' | 'heal'
   message: string
   icon?: string
 }
@@ -68,6 +68,8 @@ function NotificationItem({
         return '💰'
       case 'exp':
         return '✨'
+      case 'heal':
+        return '💚'
       case 'info':
       default:
         return 'ℹ️'

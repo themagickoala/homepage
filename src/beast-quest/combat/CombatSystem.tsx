@@ -40,12 +40,18 @@ import {
   FONTS,
 } from '../render/ui'
 
+interface PartyHpMp {
+  id: string
+  currentHp: number
+  currentMp: number
+}
+
 interface CombatSystemProps {
   party: PartyMember[]
   enemies: Enemy[]
   inventory: InventorySlot[]
   canFlee: boolean
-  onVictory: (experience: number, gold: number, loot: string[]) => void
+  onVictory: (experience: number, gold: number, loot: string[], partyStats: PartyHpMp[]) => void
   onDefeat: () => void
   onFlee: () => void
   onUseItem: (itemId: string, targetId: string) => void
@@ -407,9 +413,13 @@ export function CombatSystem({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Handle victory summary dismissal
-      if (showVictorySummary && victoryRewards) {
+      if (showVictorySummary && victoryRewards && combatState) {
         if (e.key === 'Enter' || e.key === ' ') {
-          onVictory(victoryRewards.experience, victoryRewards.gold, victoryRewards.loot)
+          // Extract party HP/MP from combat state
+          const partyStats = combatState.entities
+            .filter((e) => e.isPlayer)
+            .map((e) => ({ id: e.id, currentHp: e.stats.currentHp, currentMp: e.stats.currentMp }))
+          onVictory(victoryRewards.experience, victoryRewards.gold, victoryRewards.loot, partyStats)
         }
         return
       }

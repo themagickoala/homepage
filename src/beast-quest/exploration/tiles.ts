@@ -64,11 +64,11 @@ export const TILE_COLORS: Record<
     left: '#2a2a3a',
     right: '#1a1a2a',
   },
-  save_point: {
-    top: '#4a6a8a',
-    left: '#3a5a7a',
-    right: '#2a4a6a',
-    highlight: '#6a8aaa',
+  healing_pool: {
+    top: '#4a8a6a',
+    left: '#3a7a5a',
+    right: '#2a6a4a',
+    highlight: '#6aaa8a',
   },
 }
 
@@ -139,10 +139,10 @@ export const TILES: Record<TileType, Tile> = {
     interactable: true,
     metadata: { targetFloor: '', targetPosition: { col: 0, row: 0 } },
   },
-  save_point: {
-    type: 'save_point',
+  healing_pool: {
+    type: 'healing_pool',
     walkable: true,
-    sprite: 'tile_save_point',
+    sprite: 'tile_healing_pool',
     interactable: true,
   },
 }

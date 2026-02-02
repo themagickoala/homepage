@@ -18,7 +18,7 @@ function parseTileMap(map: string[]): TileType[][] {
     'S': 'switch',
     '^': 'stairs_up',
     'v': 'stairs_down',
-    '*': 'save_point',
+    '*': 'healing_pool',
   }
 
   return map.map((row) =>

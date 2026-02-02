@@ -96,7 +96,28 @@ export function Game() {
   const handleMove = useCallback((newExploration: GameState['exploration']) => {
     setGameState((prev) => {
       if (!prev) return prev
-      return { ...prev, exploration: newExploration }
+
+      let updatedState = { ...prev, exploration: newExploration }
+
+      // Check for MP recovery (1 MP per 3 steps)
+      if (newExploration.stepsForMpRecovery >= 3) {
+        updatedState = {
+          ...updatedState,
+          exploration: {
+            ...updatedState.exploration,
+            stepsForMpRecovery: 0, // Reset counter
+          },
+          party: updatedState.party.map((member) => ({
+            ...member,
+            stats: {
+              ...member.stats,
+              currentMp: Math.min(member.stats.maxMp, member.stats.currentMp + 1),
+            },
+          })),
+        }
+      }
+
+      return updatedState
     })
   }, [])
 
@@ -165,12 +186,13 @@ export function Game() {
         break
 
       case 'trigger':
-        if (entity.metadata?.action === 'save') {
-          // Save point - restore HP/MP and allow save
+        if (entity.metadata?.action === 'heal') {
+          // Healing pool - restore HP/MP to full
           setGameState((prev) => {
             if (!prev) return prev
-            return { ...restoreParty(prev), phase: 'menu' }
+            return restoreParty(prev)
           })
+          addNotification('heal', 'The healing pool restores your strength!')
         }
         break
 
@@ -189,28 +211,58 @@ export function Game() {
   }, [])
 
   // Handle combat victory
-  const handleVictory = useCallback((experience: number, gold: number, _loot: string[]) => {
-    setGameState((prev) => {
-      if (!prev) return prev
+  const handleVictory = useCallback(
+    (
+      experience: number,
+      gold: number,
+      _loot: string[],
+      partyStats: { id: string; currentHp: number; currentMp: number }[]
+    ) => {
+      setGameState((prev) => {
+        if (!prev) return prev
 
-      let newState = addExperience(prev, experience)
-      newState = addGold(newState, gold)
-
-      // Check if boss was defeated (Ferno)
-      const defeatedBoss = currentEnemies.some((e) => e.type === 'boss')
-      if (defeatedBoss) {
-        // Collect Dragon Scale token
-        newState = {
-          ...newState,
-          shieldTokens: collectToken(newState.shieldTokens, 'dragon_scale'),
+        // First apply combat HP/MP to party
+        let newState = {
+          ...prev,
+          party: prev.party.map((member) => {
+            const combatStats = partyStats.find((p) => p.id === member.id)
+            if (combatStats) {
+              return {
+                ...member,
+                stats: {
+                  ...member.stats,
+                  currentHp: combatStats.currentHp,
+                  currentMp: combatStats.currentMp,
+                },
+              }
+            }
+            return member
+          }),
         }
-        newState = setFlag(newState, 'ferno_defeated')
-      }
 
-      return { ...newState, phase: 'exploring' }
-    })
-    setCurrentEnemies([])
-  }, [currentEnemies])
+        // Then apply experience (may heal if level up)
+        newState = addExperience(newState, experience)
+        newState = addGold(newState, gold)
+
+        // Check if boss was defeated (Ferno)
+        const defeatedBoss = currentEnemies.some((e) => e.type === 'boss')
+        if (defeatedBoss) {
+          // Collect Dragon Scale token
+          newState = {
+            ...newState,
+            shieldTokens: collectToken(newState.shieldTokens, 'dragon_scale'),
+          }
+          newState = setFlag(newState, 'ferno_defeated')
+          // Show victory/quest complete screen
+          return { ...newState, phase: 'victory' }
+        }
+
+        return { ...newState, phase: 'exploring' }
+      })
+      setCurrentEnemies([])
+    },
+    [currentEnemies]
+  )
 
   // Handle combat defeat
   const handleDefeat = useCallback(() => {
@@ -355,9 +407,26 @@ export function Game() {
     return (
       <div className="beast-quest-victory">
         <div className="victory-content">
-          <h1>Victory!</h1>
-          <p>You have defeated Ferno the Fire Dragon!</p>
-          <p>The Dragon Scale has been added to Tom's shield.</p>
+          <h1>Quest Complete!</h1>
+          <div className="victory-beast">
+            <div className="beast-defeated-icon" />
+            <h2>Ferno the Fire Dragon</h2>
+            <p className="beast-subtitle">Has Been Defeated!</p>
+          </div>
+          <div className="victory-reward">
+            <div className="token-icon" />
+            <p>The <strong>Dragon Scale</strong> has been added to Tom's shield.</p>
+            <p className="token-bonus">+10 Max HP, +2 Defense</p>
+          </div>
+          <div className="victory-stats">
+            <p>Tom - Level {gameState.party[0]?.stats.level}</p>
+            <p>Elenna - Level {gameState.party[1]?.stats.level}</p>
+            <p>Play Time: {Math.floor(gameState.playTime / 60)}:{String(gameState.playTime % 60).padStart(2, '0')}</p>
+          </div>
+          <div className="victory-coming-soon">
+            <p>Thank you for playing the Beast Quest demo!</p>
+            <p className="coming-soon-text">More levels coming soon...</p>
+          </div>
           <div className="victory-options">
             <button onClick={handleQuit}>Return to Title</button>
           </div>

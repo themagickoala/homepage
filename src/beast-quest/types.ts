@@ -209,7 +209,7 @@ export type TileType =
   | 'switch'
   | 'stairs_up'
   | 'stairs_down'
-  | 'save_point'
+  | 'healing_pool'
 
 export interface Tile {
   type: TileType
@@ -342,6 +342,7 @@ export interface ExplorationState {
   openedChests: string[]
   activatedSwitches: string[]
   stepsSinceLastEncounter: number
+  stepsForMpRecovery: number // Counts 0-2, resets when MP is recovered
 }
 
 export interface GameState {
