@@ -19,12 +19,14 @@ import {
   updatePlayTime,
   restoreParty,
   setFlag,
+  learnSkill,
 } from './gameState'
 import { Dungeon } from './exploration/Dungeon'
 import { CombatSystem } from './combat/CombatSystem'
 import { DialogueUI } from './components/DialogueUI'
 import { InventoryUI } from './components/InventoryUI'
 import { GameMenu } from './components/GameMenu'
+import { SkillTree } from './components/SkillTree'
 import { Notifications, Notification } from './components/Notifications'
 import { createEnemyInstance } from './combat/enemies'
 import { DUNGEON_DIALOGUES, CHEST_CONTENTS } from './data/ferno-dungeon'
@@ -255,6 +257,28 @@ export function Game() {
     setGameState((prev) => (prev ? { ...prev, phase: 'menu' } : prev))
   }, [])
 
+  const openSkillTree = useCallback(() => {
+    setGameState((prev) => (prev ? { ...prev, phase: 'skill_tree' } : prev))
+  }, [])
+
+  const closeSkillTree = useCallback(() => {
+    setGameState((prev) => (prev ? { ...prev, phase: 'menu' } : prev))
+  }, [])
+
+  const handleLearnSkill = useCallback((characterId: string, skillId: string) => {
+    setGameState((prev) => {
+      if (!prev) return prev
+      const newState = learnSkill(prev, characterId, skillId)
+      // Find the skill name for the notification
+      const member = newState.party.find((m) => m.id === characterId)
+      const skill = member?.skills.find((s) => s.id === skillId)
+      if (skill) {
+        addNotification('info', `${member?.name} learned ${skill.name}!`)
+      }
+      return newState
+    })
+  }, [addNotification])
+
   const handleQuit = useCallback(() => {
     setGameState(null)
     setShowTitle(true)
@@ -390,6 +414,15 @@ export function Game() {
         />
       )}
 
+      {/* Skill Tree */}
+      {gameState.phase === 'skill_tree' && (
+        <SkillTree
+          party={gameState.party}
+          onLearnSkill={handleLearnSkill}
+          onClose={closeSkillTree}
+        />
+      )}
+
       {/* Game Menu */}
       {gameState.phase === 'menu' && (
         <GameMenu
@@ -397,7 +430,7 @@ export function Game() {
           playTime={gameState.playTime}
           onResume={closeMenu}
           onInventory={openInventory}
-          onSkillTree={() => {}} // TODO: Implement skill tree
+          onSkillTree={openSkillTree}
           onSave={handleSaveGame}
           onLoad={handleLoadGame}
           onQuit={handleQuit}

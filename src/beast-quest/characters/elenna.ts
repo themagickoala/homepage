@@ -13,12 +13,12 @@ export const ELENNA_SKILLS: Skill[] = [
   {
     id: 'elenna_arrow',
     name: 'Arrow Shot',
-    description: 'Fire a precise arrow at the enemy',
+    description: 'Fire a precise arrow that deals extra damage',
     type: 'attack',
     targetType: 'single_enemy',
     element: 'physical',
-    mpCost: 0,
-    power: 0.9,
+    mpCost: 2,
+    power: 1.2,
   },
   // Level 2
   {

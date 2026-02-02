@@ -411,3 +411,41 @@ export function restoreParty(state: GameState): GameState {
 
   return { ...state, party }
 }
+
+/**
+ * Learn a skill for a party member
+ */
+export function learnSkill(
+  state: GameState,
+  characterId: string,
+  skillId: string
+): GameState {
+  const party = state.party.map((member) => {
+    if (member.id !== characterId) return member
+
+    // Find the skill in the skill tree
+    const skillNode = member.skillTree.find((node) => node.skill.id === skillId)
+    if (!skillNode) return member
+
+    // Check if already unlocked
+    if (member.unlockedSkillIds.includes(skillId)) return member
+
+    // Check level requirement
+    if (member.stats.level < skillNode.levelRequired) return member
+
+    // Check prerequisites
+    const hasPrereqs = skillNode.prerequisiteSkillIds.every((id) =>
+      member.unlockedSkillIds.includes(id)
+    )
+    if (!hasPrereqs) return member
+
+    // Learn the skill
+    return {
+      ...member,
+      skills: [...member.skills, skillNode.skill],
+      unlockedSkillIds: [...member.unlockedSkillIds, skillId],
+    }
+  })
+
+  return { ...state, party }
+}

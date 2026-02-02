@@ -12,12 +12,12 @@ export const TOM_SKILLS: Skill[] = [
   {
     id: 'tom_strike',
     name: 'Strike',
-    description: 'A powerful sword strike',
+    description: 'A powerful sword strike that deals extra damage',
     type: 'attack',
     targetType: 'single_enemy',
     element: 'physical',
-    mpCost: 0,
-    power: 1.0,
+    mpCost: 3,
+    power: 1.3,
   },
   // Level 2
   {
