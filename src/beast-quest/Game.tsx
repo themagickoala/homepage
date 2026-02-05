@@ -19,6 +19,7 @@ import {
   updatePlayTime,
   restoreParty,
   setFlag,
+  hasFlag,
   learnSkill,
 } from './gameState'
 import { Dungeon } from './exploration/Dungeon'
@@ -32,6 +33,8 @@ import { createEnemyInstance } from './combat/enemies'
 import { DUNGEON_DIALOGUES, CHEST_CONTENTS } from './data/ferno-dungeon'
 import { ITEMS } from './data/items'
 import { collectToken } from './data/shield-tokens'
+import { TutorialOverlay } from './components/TutorialOverlay'
+import { TUTORIALS } from './data/tutorials'
 import './Game.css'
 
 export function Game() {
@@ -40,6 +43,7 @@ export function Game() {
   const [currentEnemies, setCurrentEnemies] = useState<Enemy[]>([])
   const [currentDialogue, setCurrentDialogue] = useState<Dialogue | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [pendingTutorial, setPendingTutorial] = useState<string | null>(null)
   const playTimeRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const notificationIdRef = useRef(0)
 
@@ -54,10 +58,18 @@ export function Game() {
     setNotifications((prev) => prev.filter((n) => n.id !== id))
   }, [])
 
+  // Dismiss tutorial and mark as seen
+  const dismissTutorial = useCallback(() => {
+    if (!pendingTutorial) return
+    setGameState((prev) => (prev ? setFlag(prev, pendingTutorial) : prev))
+    setPendingTutorial(null)
+  }, [pendingTutorial])
+
   // Start new game
   const handleNewGame = useCallback(() => {
     setGameState(createNewGameState())
     setShowTitle(false)
+    setPendingTutorial('tutorial_game_start')
   }, [])
 
   // Load game from save code
@@ -137,7 +149,13 @@ export function Game() {
 
     if (enemies.length > 0) {
       setCurrentEnemies(enemies)
-      setGameState((prev) => (prev ? { ...prev, phase: 'combat' } : prev))
+      setGameState((prev) => {
+        if (!prev) return prev
+        if (!hasFlag(prev, 'tutorial_combat')) {
+          setTimeout(() => setPendingTutorial('tutorial_combat'), 0)
+        }
+        return { ...prev, phase: 'combat' as const }
+      })
     }
   }, [])
 
@@ -177,6 +195,14 @@ export function Game() {
             addNotification('item', `Obtained ${name}${quantity > 1 ? ` x${quantity}` : ''}!`)
           })
 
+          // Check if any items are equipment
+          const hasEquipment = items.some((slot) =>
+            ['weapon', 'armor', 'accessory'].includes(slot.item.type)
+          )
+          if (hasEquipment && !hasFlag(prev, 'tutorial_equipment_pickup')) {
+            setTimeout(() => setPendingTutorial('tutorial_equipment_pickup'), 0)
+          }
+
           return openChest(prev, entity.id, items)
         })
         break
@@ -203,7 +229,13 @@ export function Game() {
           const boss = createEnemyInstance(bossId)
           if (boss) {
             setCurrentEnemies([boss])
-            setGameState((prev) => (prev ? { ...prev, phase: 'combat' } : prev))
+            setGameState((prev) => {
+              if (!prev) return prev
+              if (!hasFlag(prev, 'tutorial_combat')) {
+                setTimeout(() => setPendingTutorial('tutorial_combat'), 0)
+              }
+              return { ...prev, phase: 'combat' as const }
+            })
           }
         }
         break
@@ -241,8 +273,15 @@ export function Game() {
         }
 
         // Then apply experience (may heal if level up)
+        const levelsBefore = newState.party.map((m) => m.stats.level)
         newState = addExperience(newState, experience)
         newState = addGold(newState, gold)
+
+        // Check for level up
+        const didLevelUp = newState.party.some((m, i) => m.stats.level > levelsBefore[i])
+        if (didLevelUp && !hasFlag(newState, 'tutorial_level_up')) {
+          setTimeout(() => setPendingTutorial('tutorial_level_up'), 0)
+        }
 
         // Check if boss was defeated (Ferno)
         const defeatedBoss = currentEnemies.some((e) => e.type === 'boss')
@@ -294,7 +333,13 @@ export function Game() {
 
   // UI state handlers
   const openMenu = useCallback(() => {
-    setGameState((prev) => (prev ? { ...prev, phase: 'menu' } : prev))
+    setGameState((prev) => {
+      if (!prev) return prev
+      if (!hasFlag(prev, 'tutorial_menu')) {
+        setTimeout(() => setPendingTutorial('tutorial_menu'), 0)
+      }
+      return { ...prev, phase: 'menu' as const }
+    })
   }, [])
 
   const closeMenu = useCallback(() => {
@@ -302,7 +347,13 @@ export function Game() {
   }, [])
 
   const openInventory = useCallback(() => {
-    setGameState((prev) => (prev ? { ...prev, phase: 'inventory' } : prev))
+    setGameState((prev) => {
+      if (!prev) return prev
+      if (!hasFlag(prev, 'tutorial_inventory')) {
+        setTimeout(() => setPendingTutorial('tutorial_inventory'), 0)
+      }
+      return { ...prev, phase: 'inventory' as const }
+    })
   }, [])
 
   const closeInventory = useCallback(() => {
@@ -310,7 +361,13 @@ export function Game() {
   }, [])
 
   const openSkillTree = useCallback(() => {
-    setGameState((prev) => (prev ? { ...prev, phase: 'skill_tree' } : prev))
+    setGameState((prev) => {
+      if (!prev) return prev
+      if (!hasFlag(prev, 'tutorial_skill_tree')) {
+        setTimeout(() => setPendingTutorial('tutorial_skill_tree'), 0)
+      }
+      return { ...prev, phase: 'skill_tree' as const }
+    })
   }, [])
 
   const closeSkillTree = useCallback(() => {
@@ -440,6 +497,11 @@ export function Game() {
       {/* Notifications */}
       <Notifications notifications={notifications} onDismiss={dismissNotification} />
 
+      {/* Tutorial Overlay */}
+      {pendingTutorial && TUTORIALS[pendingTutorial] && (
+        <TutorialOverlay tutorial={TUTORIALS[pendingTutorial]} onDismiss={dismissTutorial} />
+      )}
+
       {/* Exploration */}
       {gameState.phase === 'exploring' && (
         <Dungeon
@@ -463,6 +525,11 @@ export function Game() {
           onDefeat={handleDefeat}
           onFlee={handleFlee}
           onUseItem={handleUseItem}
+          onTutorialTrigger={(id) => {
+            if (gameState && !hasFlag(gameState, id) && !pendingTutorial) {
+              setPendingTutorial(id)
+            }
+          }}
         />
       )}
 

@@ -1,0 +1,79 @@
+/* Tutorial Overlay Styles */
+
+.tutorial-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  animation: tutorialFadeIn 0.3s ease-out;
+}
+
+.tutorial-panel {
+  background: rgba(20, 20, 40, 0.98);
+  border: 2px solid #4a4a6a;
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90%;
+  padding: 25px 30px;
+  animation: tutorialSlideIn 0.3s ease-out;
+}
+
+.tutorial-title {
+  margin: 0 0 20px 0;
+  color: #ffd700;
+  font-family: monospace;
+  font-size: 22px;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.tutorial-content {
+  margin-bottom: 20px;
+}
+
+.tutorial-line {
+  color: #ccccdd;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 10px 0;
+}
+
+.tutorial-line:last-child {
+  margin-bottom: 0;
+}
+
+.tutorial-footer {
+  text-align: center;
+  color: #666688;
+  font-family: monospace;
+  font-size: 12px;
+  padding-top: 15px;
+  border-top: 1px solid #4a4a6a;
+}
+
+@keyframes tutorialFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tutorialSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

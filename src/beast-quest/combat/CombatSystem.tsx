@@ -55,6 +55,7 @@ interface CombatSystemProps {
   onDefeat: () => void
   onFlee: () => void
   onUseItem: (itemId: string, targetId: string) => void
+  onTutorialTrigger?: (tutorialId: string) => void
 }
 
 type MenuState = 'main' | 'skills' | 'items' | 'targets'
@@ -75,6 +76,7 @@ export function CombatSystem({
   onDefeat,
   onFlee,
   onUseItem,
+  onTutorialTrigger,
 }: CombatSystemProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [combatState, setCombatState] = useState<CombatState | null>(null)
@@ -375,6 +377,7 @@ export function CombatSystem({
       const target = validTargets[Math.floor(Math.random() * validTargets.length)]
 
       // 30% chance to use a skill if available
+      let resultState: CombatState
       if (enemyData.skills.length > 0 && Math.random() < 0.3) {
         const skill = enemyData.skills[Math.floor(Math.random() * enemyData.skills.length)]
         const targets =
@@ -383,12 +386,27 @@ export function CombatSystem({
             : [target.id]
 
         const result = executeSkill(combatState, currentEntity.id, skill, targets)
+        resultState = result.state
         setCombatState(result.state)
         setBattleLog((prev) => [...prev, ...result.logs])
       } else {
         const result = executeAttack(combatState, currentEntity.id, target.id)
+        resultState = result.state
         setCombatState(result.state)
         setBattleLog((prev) => [...prev, result.log])
+      }
+
+      // Check for tutorial triggers after enemy action
+      if (onTutorialTrigger) {
+        const playerEntities = resultState.entities.filter((e) => e.isPlayer)
+        // Low HP: any party member below 30%
+        if (playerEntities.some((e) => e.stats.currentHp > 0 && e.stats.currentHp / e.stats.maxHp < 0.3)) {
+          onTutorialTrigger('tutorial_low_hp')
+        }
+        // Poisoned: any party member has poison or burn
+        if (playerEntities.some((e) => e.statusEffects.some((s) => s.type === 'poison' || s.type === 'burn'))) {
+          onTutorialTrigger('tutorial_poisoned')
+        }
       }
 
       // Check combat end
