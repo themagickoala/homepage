@@ -14,6 +14,8 @@ import {
 import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
+  TILE_WIDTH,
+  TILE_HEIGHT,
   isoToScreen,
   getVisibleTiles,
   drawIsometricTile,
@@ -208,6 +210,19 @@ export function Dungeon({
 
       onMove(newState)
 
+      // Trigger healing pool when stepping onto it
+      if (targetTile === 'healing_pool') {
+        onInteract({
+          id: 'healing_pool',
+          type: 'trigger',
+          position: { col: newCol, row: newRow },
+          sprite: 'healing_pool',
+          direction: 'south',
+          interactable: true,
+          metadata: { action: 'heal' },
+        })
+      }
+
       // Check for encounter after movement animation completes
       setTimeout(() => {
         setIsMoving(false)
@@ -331,6 +346,16 @@ export function Dungeon({
     ctx.fillStyle = '#0a0a1a'
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
+    // Center the room on the canvas
+    const midCol = currentRoom.width / 2
+    const midRow = currentRoom.height / 2
+    const roomCenterX = CANVAS_WIDTH / 2 + (midCol - midRow) * (TILE_WIDTH / 2)
+    const roomCenterY = 100 + (midCol + midRow) * (TILE_HEIGHT / 2)
+    const offsetX = CANVAS_WIDTH / 2 - roomCenterX
+    const offsetY = CANVAS_HEIGHT / 2 - roomCenterY
+    ctx.save()
+    ctx.translate(offsetX, offsetY)
+
     // Get visible tiles
     const visibleTiles = getVisibleTiles(currentRoom.width, currentRoom.height)
     // Use visual position for depth calculation during animation
@@ -433,11 +458,110 @@ export function Dungeon({
       if (height === 0) {
         drawIsometricTile(ctx, tilePos, colors.top, colors.left)
 
+        // Door directional indicator
+        if (tileType === 'door') {
+          // Determine direction from door position on room edge
+          let arrowDx = 0
+          let arrowDy = 0
+          if (tilePos.col === 0) {
+            // West edge → arrow points left (iso west)
+            arrowDx = -TILE_WIDTH / 2
+            arrowDy = 0
+          } else if (tilePos.col === currentRoom.width - 1) {
+            // East edge → arrow points right (iso east)
+            arrowDx = TILE_WIDTH / 2
+            arrowDy = 0
+          } else if (tilePos.row === 0) {
+            // North edge → arrow points up (iso north)
+            arrowDx = 0
+            arrowDy = -TILE_HEIGHT / 2
+          } else {
+            // South edge → arrow points down (iso south)
+            arrowDx = 0
+            arrowDy = TILE_HEIGHT / 2
+          }
+
+          const center = isoToScreen(tilePos)
+          const pulse = 0.5 + Math.sin(animationFrame * 0.08) * 0.3
+
+          ctx.save()
+          ctx.globalAlpha = pulse
+
+          // Normalize direction and draw chevron arrows
+          const len = Math.sqrt(arrowDx * arrowDx + arrowDy * arrowDy)
+          const nx = arrowDx / len
+          const ny = arrowDy / len
+          // Perpendicular
+          const px = -ny
+          const py = nx
+
+          const arrowSize = 6
+          const spacing = 5
+
+          // Draw two chevrons pointing in the direction
+          for (let i = -1; i <= 1; i += 2) {
+            const ox = nx * spacing * i
+            const oy = ny * spacing * i
+            ctx.beginPath()
+            ctx.moveTo(
+              center.x + ox - nx * arrowSize + px * arrowSize,
+              center.y + oy - ny * arrowSize + py * arrowSize
+            )
+            ctx.lineTo(center.x + ox + nx * arrowSize, center.y + oy + ny * arrowSize)
+            ctx.lineTo(
+              center.x + ox - nx * arrowSize - px * arrowSize,
+              center.y + oy - ny * arrowSize - py * arrowSize
+            )
+            ctx.strokeStyle = '#ccaa66'
+            ctx.lineWidth = 2
+            ctx.stroke()
+          }
+
+          ctx.restore()
+        }
+
         // Special tile effects
-        if (colors.highlight && tileType === 'lava') {
-          const glowIntensity = 0.3 + Math.sin(animationFrame * 0.1) * 0.2
-          ctx.globalAlpha = glowIntensity
-          drawIsometricTile(ctx, tilePos, colors.highlight)
+        if (tileType === 'lava') {
+          // Bubbling effect — slow, viscous lava bubbles seeded by tile position
+          const center = isoToScreen(tilePos)
+          const seed = tilePos.col * 7 + tilePos.row * 13
+          for (let b = 0; b < 2; b++) {
+            const bubbleSeed = seed + b * 37
+            // Long cycle for slow, heavy bubbling
+            const period = 300 + (bubbleSeed % 120)
+            const phase = (animationFrame + bubbleSeed * 3) % period
+            const t = phase / period // 0..1 through the bubble lifecycle
+
+            if (t > 0.7) continue // long gap between bubbles
+
+            // Position: offset within the tile diamond, slow upward drift
+            const offsetX = ((bubbleSeed * 13) % 17 - 8) * 1.2
+            const offsetY = ((bubbleSeed * 7) % 13 - 6) * 0.8
+            const riseAmount = t * 4
+            const bx = center.x + offsetX
+            const by = center.y + offsetY - riseAmount
+
+            // Size: slowly swells then pops
+            const growT = t < 0.5 ? t / 0.5 : 1 - (t - 0.5) / 0.2
+            const radius = Math.max(0.5, 1.5 + growT * 2.5)
+
+            // Fade out as it pops
+            const alpha = t < 0.55 ? 0.5 : 0.5 * (1 - (t - 0.55) / 0.15)
+
+            ctx.globalAlpha = Math.max(0, alpha)
+            ctx.fillStyle = '#cc8822'
+            ctx.beginPath()
+            ctx.arc(bx, by, radius, 0, Math.PI * 2)
+            ctx.fill()
+
+            // Bright highlight on the bubble
+            if (radius > 1.5) {
+              ctx.fillStyle = '#dd9933'
+              ctx.beginPath()
+              ctx.arc(bx - radius * 0.3, by - radius * 0.3, radius * 0.35, 0, Math.PI * 2)
+              ctx.fill()
+            }
+          }
           ctx.globalAlpha = 1
         }
         if (tileType === 'healing_pool') {
@@ -505,6 +629,9 @@ export function Dungeon({
         animationFrame
       )
     }
+
+    // Restore transform before drawing screen-space UI
+    ctx.restore()
 
     // Draw HUD
     drawExplorationHUD(ctx, party as any, currentRoom.name)

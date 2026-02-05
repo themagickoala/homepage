@@ -7,8 +7,8 @@
 import { Vector2D, IsoPosition } from '../types'
 
 // Canvas dimensions
-export const CANVAS_WIDTH = 800
-export const CANVAS_HEIGHT = 600
+export const CANVAS_WIDTH = 1000
+export const CANVAS_HEIGHT = 700
 
 // Tile dimensions in screen space
 export const TILE_WIDTH = 64 // Width of diamond

@@ -27,10 +27,10 @@ export const TILE_COLORS: Record<
     highlight: '#3a6a8a',
   },
   lava: {
-    top: '#ff6a2a',
-    left: '#cc4a1a',
-    right: '#992a0a',
-    highlight: '#ff8a4a',
+    top: '#cc4a1a',
+    left: '#993a10',
+    right: '#662a08',
+    highlight: '#dd6a2a',
   },
   pit: {
     top: '#1a1a2a',
@@ -182,7 +182,6 @@ export const WALL_HEIGHT = 24
 export const TILE_HEIGHTS: Partial<Record<TileType, number>> = {
   wall: WALL_HEIGHT,
   chest: 12,
-  door: WALL_HEIGHT,
 }
 
 /**
