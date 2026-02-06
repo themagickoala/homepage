@@ -1,11 +1,13 @@
 // ============================================
 // Character Avatar Images
 // ============================================
-// Loads face art from the Beast Quest Wiki
+
+import tomAvatar from '../assets/tom.png'
+import elennaAvatar from '../assets/elenna.png'
 
 const AVATAR_URLS: Record<string, string> = {
-  tom: 'https://static.wikia.nocookie.net/beastquestbooks/images/2/2d/Wiki_About.jpeg/revision/latest/scale-to-width-down/80?cb=20171022141227',
-  elenna: 'https://static.wikia.nocookie.net/beastquestbooks/images/6/6a/Archer.jpg/revision/latest/scale-to-width-down/80?cb=20210316172123',
+  tom: tomAvatar,
+  elenna: elennaAvatar,
 }
 
 const loadedAvatars: Record<string, HTMLImageElement> = {}
@@ -52,21 +54,13 @@ export function drawAvatar(
   const img = getAvatar(characterId)
 
   if (img) {
-    // Draw circular clipped avatar
-    ctx.save()
-    ctx.beginPath()
-    ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2)
-    ctx.closePath()
-    ctx.clip()
+    // Draw square avatar
     ctx.drawImage(img, x, y, size, size)
-    ctx.restore()
 
     // Border
     ctx.strokeStyle = '#aaaaff'
     ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2)
-    ctx.stroke()
+    ctx.strokeRect(x, y, size, size)
   } else {
     // Fallback: procedural avatar
     drawFallbackAvatar(ctx, x, y, size, characterId)
@@ -85,11 +79,9 @@ function drawFallbackAvatar(
   const cy = y + size / 2
   const r = size / 2
 
-  // Background circle
+  // Background square
   ctx.fillStyle = characterId === 'tom' ? '#4a7abc' : '#7a5a3a'
-  ctx.beginPath()
-  ctx.arc(cx, cy, r, 0, Math.PI * 2)
-  ctx.fill()
+  ctx.fillRect(x, y, size, size)
 
   // Face
   ctx.fillStyle = characterId === 'tom' ? '#e8c8a8' : '#e8d0b8'
@@ -113,9 +105,7 @@ function drawFallbackAvatar(
   // Border
   ctx.strokeStyle = '#aaaaff'
   ctx.lineWidth = 2
-  ctx.beginPath()
-  ctx.arc(cx, cy, r, 0, Math.PI * 2)
-  ctx.stroke()
+  ctx.strokeRect(x, y, size, size)
 
   ctx.restore()
 }

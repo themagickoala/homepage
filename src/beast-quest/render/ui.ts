@@ -5,6 +5,7 @@
 
 import { PartyMember, CombatEntity } from '../types'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from './isometric'
+import { drawAvatar } from '../data/avatars'
 
 // UI Colors
 export const UI_COLORS = {
@@ -281,24 +282,29 @@ export function drawExplorationHUD(
   ctx.fillText(locationName, CANVAS_WIDTH / 2, 20)
 
   // Party stats at bottom
+  const avatarSize = 48
   const statsWidth = 160
+  const panelWidth = avatarSize + statsWidth
   const statsHeight = 50
   const startX = 10
   const startY = CANVAS_HEIGHT - statsHeight - 10
 
   party.forEach((member, index) => {
-    const x = startX + index * (statsWidth + 10)
-    drawPanel(ctx, x, startY, statsWidth, statsHeight)
+    const x = startX + index * (panelWidth + 10)
+    drawAvatar(ctx, x, startY + (statsHeight - avatarSize) / 2, avatarSize, member.id)
+
+    const textX = x + avatarSize
+    drawPanel(ctx, textX, startY, statsWidth, statsHeight)
 
     ctx.fillStyle = UI_COLORS.textPrimary
     ctx.font = FONTS.small
     ctx.textAlign = 'left'
-    ctx.fillText(member.name, x + 8, startY + 16)
+    ctx.fillText(member.name, textX + 8, startY + 16)
 
     // Mini HP bar
     drawBar(
       ctx,
-      x + 8,
+      textX + 8,
       startY + 22,
       statsWidth - 16,
       8,
@@ -311,7 +317,7 @@ export function drawExplorationHUD(
     // Mini MP bar
     drawBar(
       ctx,
-      x + 8,
+      textX + 8,
       startY + 34,
       statsWidth - 16,
       8,

@@ -60,7 +60,10 @@ const BOSS_INFO: Record<string, { name: string; tokenId: string; tokenName: stri
 import { collectToken } from './data/shield-tokens'
 import { TutorialOverlay } from './components/TutorialOverlay'
 import { TUTORIALS } from './data/tutorials'
+import { preloadAvatars } from './data/avatars'
 import './Game.css'
+
+preloadAvatars()
 
 export function Game() {
   const [gameState, setGameState] = useState<GameState | null>(null)

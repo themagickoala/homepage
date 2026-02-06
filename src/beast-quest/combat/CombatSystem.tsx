@@ -28,7 +28,7 @@ import {
   isAlive,
 } from './actions'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../render/isometric'
-import { preloadAvatars, drawAvatar } from '../data/avatars'
+import { drawAvatar } from '../data/avatars'
 import { drawEnemySprite } from '../render/sprites'
 import {
   drawCharacterStats,
@@ -126,8 +126,6 @@ export function CombatSystem({
     // Prevent re-initialization if party/inventory props change during combat
     if (isInitialized.current) return
     isInitialized.current = true
-
-    preloadAvatars()
 
     const partyEntities: CombatEntity[] = party.map((member) => ({
       id: member.id,
@@ -636,13 +634,13 @@ export function CombatSystem({
       if (!member) return
 
       // Position stats on right side, stacked vertically (shifted right for avatar)
-      const avatarSize = 40
-      const avatarX = CANVAS_WIDTH - 195 - avatarSize - 6
+      const avatarSize = 63
+      const avatarX = CANVAS_WIDTH - 195 - avatarSize
       const statsX = CANVAS_WIDTH - 195
       const statsY = CANVAS_HEIGHT - 155 + index * 75
 
       // Draw avatar
-      drawAvatar(ctx, avatarX, statsY + 12, avatarSize, member.id)
+      drawAvatar(ctx, avatarX, statsY + 1, avatarSize, member.id)
 
       drawCharacterStats(ctx, statsX, statsY, {
         ...member,
