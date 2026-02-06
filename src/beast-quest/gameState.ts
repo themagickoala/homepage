@@ -10,13 +10,22 @@ import { createCompanions } from './characters/companions'
 import { createShieldTokens } from './data/shield-tokens'
 import { createStartingInventory, getTomStartingEquipment, getElennaStartingEquipment } from './data/items'
 import { FERNO_DUNGEON } from './data/ferno-dungeon'
+import { SEPRON_DUNGEON } from './data/sepron-dungeon'
+import { DungeonFloor } from './types'
 
 const SAVE_VERSION = '1.0.0'
+
+// Available dungeons
+const DUNGEONS: Record<string, DungeonFloor> = {
+  ferno_cave: FERNO_DUNGEON,
+  sepron_lair: SEPRON_DUNGEON,
+}
 
 /**
  * Create a new game state
  */
-export function createNewGameState(): GameState {
+export function createNewGameState(dungeonId: string = 'ferno_cave'): GameState {
+  const dungeon = DUNGEONS[dungeonId] || FERNO_DUNGEON
   const tom = createTom()
   const elenna = createElenna()
 
@@ -25,11 +34,11 @@ export function createNewGameState(): GameState {
   elenna.equipment = getElennaStartingEquipment()
 
   const initialExploration: ExplorationState = {
-    currentFloorId: FERNO_DUNGEON.id,
-    currentRoomId: FERNO_DUNGEON.startRoomId,
-    playerPosition: { ...FERNO_DUNGEON.startPosition },
+    currentFloorId: dungeon.id,
+    currentRoomId: dungeon.startRoomId,
+    playerPosition: { ...dungeon.startPosition },
     playerDirection: 'south',
-    visitedRooms: [FERNO_DUNGEON.startRoomId],
+    visitedRooms: [dungeon.startRoomId],
     openedChests: [],
     activatedSwitches: [],
     stepsSinceLastEncounter: 0,

@@ -24,6 +24,14 @@ export const ENEMY_COLORS: Record<string, { primary: string; secondary: string; 
   magma_slime: { primary: '#ff4a1a', secondary: '#cc2a0a', outline: '#990a00' },
   fire_elemental: { primary: '#ff8a4a', secondary: '#ff5a2a', outline: '#cc3a1a' },
   ferno: { primary: '#ff2a00', secondary: '#cc1a00', outline: '#880000' },
+  // Sepron dungeon enemies
+  tide_crab: { primary: '#c45a3a', secondary: '#9a3a2a', outline: '#6a2a1a' },
+  sea_slug: { primary: '#6a5aaa', secondary: '#4a3a8a', outline: '#2a2a5a' },
+  reef_guard: { primary: '#2a8a7a', secondary: '#1a6a5a', outline: '#0a4a3a' },
+  ice_jellyfish: { primary: '#8ac8ff', secondary: '#5aa8ee', outline: '#3a88cc' },
+  frost_serpent: { primary: '#4a9acc', secondary: '#2a7aaa', outline: '#1a5a8a' },
+  aqua_guardian: { primary: '#1a6a8a', secondary: '#0a4a6a', outline: '#0a3a5a' },
+  sepron: { primary: '#0a5a9a', secondary: '#0a3a7a', outline: '#0a2a5a' },
 }
 
 // Sprite dimensions
@@ -315,6 +323,443 @@ export function drawEnemySprite(
         ctx.arc(px, py, 3 + Math.random() * 3, 0, Math.PI * 2)
         ctx.fill()
       }
+    }
+  } else if (enemyId === 'tide_crab') {
+    // Crab - rounded body with two claws
+    const scuttle = Math.sin(animationFrame * 0.25) * 2
+
+    // Body (oval)
+    ctx.fillStyle = colors.primary
+    ctx.beginPath()
+    ctx.ellipse(x, y, 14, 10, 0, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Shell pattern
+    ctx.fillStyle = colors.secondary
+    ctx.beginPath()
+    ctx.ellipse(x, y - 2, 10, 6, 0, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Left claw
+    ctx.fillStyle = colors.primary
+    ctx.beginPath()
+    ctx.moveTo(x - 14, y - 2)
+    ctx.lineTo(x - 24, y - 10 + scuttle)
+    ctx.lineTo(x - 20, y - 4 + scuttle)
+    ctx.lineTo(x - 26, y - 2 + scuttle)
+    ctx.lineTo(x - 18, y + 2)
+    ctx.closePath()
+    ctx.fill()
+
+    // Right claw
+    ctx.beginPath()
+    ctx.moveTo(x + 14, y - 2)
+    ctx.lineTo(x + 24, y - 10 - scuttle)
+    ctx.lineTo(x + 20, y - 4 - scuttle)
+    ctx.lineTo(x + 26, y - 2 - scuttle)
+    ctx.lineTo(x + 18, y + 2)
+    ctx.closePath()
+    ctx.fill()
+
+    // Legs (3 per side)
+    ctx.strokeStyle = colors.outline
+    ctx.lineWidth = 2
+    for (let i = 0; i < 3; i++) {
+      const legY = y + 4 + i * 3
+      const legWiggle = Math.sin(animationFrame * 0.3 + i) * 2
+      ctx.beginPath()
+      ctx.moveTo(x - 10, legY)
+      ctx.lineTo(x - 18, legY + 4 + legWiggle)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(x + 10, legY)
+      ctx.lineTo(x + 18, legY + 4 - legWiggle)
+      ctx.stroke()
+    }
+
+    // Eyes (on stalks)
+    ctx.fillStyle = '#000000'
+    ctx.beginPath()
+    ctx.arc(x - 5, y - 12, 2, 0, Math.PI * 2)
+    ctx.arc(x + 5, y - 12, 2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = colors.outline
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(x - 5, y - 8)
+    ctx.lineTo(x - 5, y - 12)
+    ctx.moveTo(x + 5, y - 8)
+    ctx.lineTo(x + 5, y - 12)
+    ctx.stroke()
+  } else if (enemyId === 'sea_slug') {
+    // Sea slug - elongated blob with feathery appendages
+    const pulse = Math.sin(animationFrame * 0.2) * 2
+
+    // Body
+    ctx.fillStyle = colors.primary
+    ctx.beginPath()
+    ctx.ellipse(x, y + 2, 16 + pulse, 8 - pulse / 2, 0, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Dorsal frills
+    ctx.fillStyle = colors.secondary
+    for (let i = 0; i < 4; i++) {
+      const frillX = x - 8 + i * 5
+      const frillH = 6 + Math.sin(animationFrame * 0.3 + i) * 2
+      ctx.beginPath()
+      ctx.moveTo(frillX, y - 4)
+      ctx.lineTo(frillX + 2, y - 4 - frillH)
+      ctx.lineTo(frillX + 4, y - 4)
+      ctx.closePath()
+      ctx.fill()
+    }
+
+    // Slime trail
+    ctx.fillStyle = colors.outline
+    ctx.globalAlpha = 0.4
+    ctx.beginPath()
+    ctx.ellipse(x + 14, y + 6, 6, 3, 0.2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.globalAlpha = 1.0
+
+    // Eye stalks
+    ctx.fillStyle = '#ffcc00'
+    ctx.beginPath()
+    ctx.arc(x - 10, y - 8, 2, 0, Math.PI * 2)
+    ctx.arc(x - 6, y - 9, 2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = colors.primary
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(x - 10, y - 4)
+    ctx.lineTo(x - 10, y - 8)
+    ctx.moveTo(x - 6, y - 4)
+    ctx.lineTo(x - 6, y - 9)
+    ctx.stroke()
+  } else if (enemyId === 'reef_guard') {
+    // Reef guard - coral-armored humanoid
+    const sway = Math.sin(animationFrame * 0.15) * 1
+
+    // Body (blocky, armored)
+    ctx.fillStyle = colors.primary
+    ctx.fillRect(x - 12, y - 8 + sway, 24, 20)
+
+    // Head
+    ctx.fillStyle = colors.secondary
+    ctx.fillRect(x - 8, y - 20 + sway, 16, 12)
+
+    // Coral crown
+    ctx.fillStyle = '#ff6a5a'
+    ctx.beginPath()
+    ctx.moveTo(x - 8, y - 20 + sway)
+    ctx.lineTo(x - 6, y - 28 + sway)
+    ctx.lineTo(x - 2, y - 20 + sway)
+    ctx.moveTo(x - 2, y - 20 + sway)
+    ctx.lineTo(x + 1, y - 26 + sway)
+    ctx.lineTo(x + 4, y - 20 + sway)
+    ctx.moveTo(x + 4, y - 20 + sway)
+    ctx.lineTo(x + 6, y - 28 + sway)
+    ctx.lineTo(x + 8, y - 20 + sway)
+    ctx.fill()
+
+    // Arms
+    ctx.fillStyle = colors.primary
+    ctx.fillRect(x - 20, y - 6 + sway, 8, 14)
+    ctx.fillRect(x + 12, y - 6 + sway, 8, 14)
+
+    // Legs
+    ctx.fillStyle = colors.secondary
+    ctx.fillRect(x - 10, y + 12 + sway, 8, 10)
+    ctx.fillRect(x + 2, y + 12 + sway, 8, 10)
+
+    // Eyes
+    ctx.fillStyle = '#00ffaa'
+    ctx.fillRect(x - 5, y - 16 + sway, 4, 3)
+    ctx.fillRect(x + 1, y - 16 + sway, 4, 3)
+  } else if (enemyId === 'ice_jellyfish') {
+    // Jellyfish - translucent dome with tentacles
+    const bob = Math.sin(animationFrame * 0.2) * 4
+    const tentacleWave = animationFrame * 0.15
+
+    // Bell/dome
+    ctx.fillStyle = colors.primary
+    ctx.globalAlpha = 0.7
+    ctx.beginPath()
+    ctx.arc(x, y - 6 + bob, 14, Math.PI, 0)
+    ctx.closePath()
+    ctx.fill()
+
+    // Inner glow
+    ctx.fillStyle = '#ffffff'
+    ctx.globalAlpha = 0.3
+    ctx.beginPath()
+    ctx.arc(x, y - 8 + bob, 8, Math.PI, 0)
+    ctx.closePath()
+    ctx.fill()
+    ctx.globalAlpha = 1.0
+
+    // Bell rim
+    ctx.fillStyle = colors.secondary
+    ctx.fillRect(x - 14, y - 6 + bob, 28, 3)
+
+    // Tentacles
+    ctx.strokeStyle = colors.primary
+    ctx.globalAlpha = 0.6
+    ctx.lineWidth = 2
+    for (let i = 0; i < 5; i++) {
+      const tx = x - 10 + i * 5
+      ctx.beginPath()
+      ctx.moveTo(tx, y - 3 + bob)
+      for (let j = 1; j <= 4; j++) {
+        const segX = tx + Math.sin(tentacleWave + i + j * 0.5) * 4
+        const segY = y - 3 + bob + j * 6
+        ctx.lineTo(segX, segY)
+      }
+      ctx.stroke()
+    }
+    ctx.globalAlpha = 1.0
+
+    // Glow spots
+    ctx.fillStyle = '#aaeeff'
+    ctx.beginPath()
+    ctx.arc(x - 4, y - 10 + bob, 2, 0, Math.PI * 2)
+    ctx.arc(x + 4, y - 10 + bob, 2, 0, Math.PI * 2)
+    ctx.fill()
+  } else if (enemyId === 'frost_serpent') {
+    // Frost serpent - sinuous snake with ice crystals
+    const slither = animationFrame * 0.15
+
+    // Body segments (sinuous curve)
+    ctx.strokeStyle = colors.primary
+    ctx.lineWidth = 10
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.moveTo(x - 20, y + Math.sin(slither) * 6)
+    ctx.quadraticCurveTo(
+      x - 8, y - 10 + Math.sin(slither + 1) * 6,
+      x, y + Math.sin(slither + 2) * 4
+    )
+    ctx.quadraticCurveTo(
+      x + 8, y + 10 + Math.sin(slither + 3) * 6,
+      x + 22, y + Math.sin(slither + 4) * 4
+    )
+    ctx.stroke()
+
+    // Belly stripe
+    ctx.strokeStyle = colors.secondary
+    ctx.lineWidth = 5
+    ctx.beginPath()
+    ctx.moveTo(x - 20, y + Math.sin(slither) * 6)
+    ctx.quadraticCurveTo(
+      x - 8, y - 10 + Math.sin(slither + 1) * 6,
+      x, y + Math.sin(slither + 2) * 4
+    )
+    ctx.quadraticCurveTo(
+      x + 8, y + 10 + Math.sin(slither + 3) * 6,
+      x + 22, y + Math.sin(slither + 4) * 4
+    )
+    ctx.stroke()
+
+    // Head
+    ctx.fillStyle = colors.primary
+    ctx.beginPath()
+    ctx.ellipse(x - 20, y + Math.sin(slither) * 6, 8, 6, -0.3, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Ice crystals on back
+    ctx.fillStyle = '#aaddff'
+    for (let i = 0; i < 3; i++) {
+      const cx = x - 8 + i * 10
+      const cy = y - 6 + Math.sin(slither + 1 + i) * 4
+      ctx.beginPath()
+      ctx.moveTo(cx, cy - 6)
+      ctx.lineTo(cx + 3, cy)
+      ctx.lineTo(cx, cy + 2)
+      ctx.lineTo(cx - 3, cy)
+      ctx.closePath()
+      ctx.fill()
+    }
+
+    // Eyes
+    ctx.fillStyle = '#00ffff'
+    ctx.beginPath()
+    ctx.arc(x - 23, y - 2 + Math.sin(slither) * 6, 2, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Tail tip
+    ctx.strokeStyle = colors.outline
+    ctx.lineWidth = 4
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.moveTo(x + 22, y + Math.sin(slither + 4) * 4)
+    ctx.lineTo(x + 30, y - 4 + Math.sin(slither + 5) * 3)
+    ctx.stroke()
+  } else if (enemyId === 'aqua_guardian') {
+    // Aqua guardian - large armored water elemental
+    const pulse = Math.sin(animationFrame * 0.15) * 2
+
+    // Body (large, armored)
+    ctx.fillStyle = colors.primary
+    ctx.fillRect(x - 16, y - 12 + pulse, 32, 26)
+
+    // Shoulder plates
+    ctx.fillStyle = colors.secondary
+    ctx.fillRect(x - 22, y - 14 + pulse, 10, 12)
+    ctx.fillRect(x + 12, y - 14 + pulse, 10, 12)
+
+    // Head
+    ctx.fillStyle = colors.secondary
+    ctx.beginPath()
+    ctx.arc(x, y - 18 + pulse, 10, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Helmet crest
+    ctx.fillStyle = colors.outline
+    ctx.beginPath()
+    ctx.moveTo(x, y - 32 + pulse)
+    ctx.lineTo(x - 6, y - 18 + pulse)
+    ctx.lineTo(x + 6, y - 18 + pulse)
+    ctx.closePath()
+    ctx.fill()
+
+    // Arms
+    ctx.fillStyle = colors.primary
+    ctx.fillRect(x - 26, y - 4 + pulse, 10, 18)
+    ctx.fillRect(x + 16, y - 4 + pulse, 10, 18)
+
+    // Water effect (swirling particles around body)
+    ctx.fillStyle = '#4ac8ff'
+    ctx.globalAlpha = 0.5
+    for (let i = 0; i < 5; i++) {
+      const angle = animationFrame * 0.05 + (i * Math.PI * 2) / 5
+      const px = x + Math.cos(angle) * 22
+      const py = y - 2 + Math.sin(angle) * 14
+      ctx.beginPath()
+      ctx.arc(px, py, 3, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1.0
+
+    // Legs
+    ctx.fillStyle = colors.secondary
+    ctx.fillRect(x - 12, y + 14 + pulse, 10, 12)
+    ctx.fillRect(x + 2, y + 14 + pulse, 10, 12)
+
+    // Eyes
+    ctx.fillStyle = '#00ffcc'
+    ctx.beginPath()
+    ctx.arc(x - 4, y - 20 + pulse, 3, 0, Math.PI * 2)
+    ctx.arc(x + 4, y - 20 + pulse, 3, 0, Math.PI * 2)
+    ctx.fill()
+  } else if (enemyId === 'sepron') {
+    // Sepron - large sea serpent boss
+    const undulate = animationFrame * 0.1
+    const breathe = Math.sin(animationFrame * 0.1) * 2
+
+    // Coiled body segments
+    ctx.strokeStyle = colors.primary
+    ctx.lineWidth = 14
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.moveTo(x + 30, y + 20)
+    ctx.quadraticCurveTo(x + 40, y, x + 25, y - 10 + Math.sin(undulate) * 4)
+    ctx.quadraticCurveTo(x + 5, y - 20, x - 10, y - 8 + Math.sin(undulate + 1) * 4)
+    ctx.quadraticCurveTo(x - 25, y + 5, x - 15, y + 18 + Math.sin(undulate + 2) * 4)
+    ctx.stroke()
+
+    // Body stripe
+    ctx.strokeStyle = colors.secondary
+    ctx.lineWidth = 7
+    ctx.beginPath()
+    ctx.moveTo(x + 30, y + 20)
+    ctx.quadraticCurveTo(x + 40, y, x + 25, y - 10 + Math.sin(undulate) * 4)
+    ctx.quadraticCurveTo(x + 5, y - 20, x - 10, y - 8 + Math.sin(undulate + 1) * 4)
+    ctx.quadraticCurveTo(x - 25, y + 5, x - 15, y + 18 + Math.sin(undulate + 2) * 4)
+    ctx.stroke()
+
+    // Head
+    ctx.fillStyle = colors.primary
+    ctx.beginPath()
+    ctx.ellipse(x - 35, y - 15 + breathe, 22, 16, -0.2, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Jaw
+    ctx.fillStyle = colors.secondary
+    ctx.beginPath()
+    ctx.ellipse(x - 40, y - 6 + breathe, 16, 8, -0.1, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Snout
+    ctx.fillStyle = colors.outline
+    ctx.beginPath()
+    ctx.moveTo(x - 52, y - 18 + breathe)
+    ctx.lineTo(x - 68, y - 12 + breathe)
+    ctx.lineTo(x - 52, y - 6 + breathe)
+    ctx.closePath()
+    ctx.fill()
+
+    // Fangs
+    ctx.fillStyle = '#ffffff'
+    ctx.beginPath()
+    ctx.moveTo(x - 54, y - 8 + breathe)
+    ctx.lineTo(x - 56, y - 2 + breathe)
+    ctx.lineTo(x - 52, y - 6 + breathe)
+    ctx.closePath()
+    ctx.fill()
+    ctx.beginPath()
+    ctx.moveTo(x - 60, y - 8 + breathe)
+    ctx.lineTo(x - 62, y - 2 + breathe)
+    ctx.lineTo(x - 58, y - 6 + breathe)
+    ctx.closePath()
+    ctx.fill()
+
+    // Crest/fins on head
+    ctx.fillStyle = colors.outline
+    ctx.beginPath()
+    ctx.moveTo(x - 30, y - 25 + breathe)
+    ctx.lineTo(x - 25, y - 40 + breathe)
+    ctx.lineTo(x - 18, y - 25 + breathe)
+    ctx.closePath()
+    ctx.fill()
+    ctx.beginPath()
+    ctx.moveTo(x - 38, y - 22 + breathe)
+    ctx.lineTo(x - 35, y - 35 + breathe)
+    ctx.lineTo(x - 28, y - 22 + breathe)
+    ctx.closePath()
+    ctx.fill()
+
+    // Tail fin
+    ctx.fillStyle = colors.outline
+    ctx.beginPath()
+    ctx.moveTo(x + 30, y + 20)
+    ctx.lineTo(x + 42, y + 12)
+    ctx.lineTo(x + 45, y + 25)
+    ctx.lineTo(x + 35, y + 28)
+    ctx.closePath()
+    ctx.fill()
+
+    // Eyes
+    ctx.fillStyle = '#00ffff'
+    ctx.beginPath()
+    ctx.arc(x - 42, y - 20 + breathe, 4, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#000000'
+    ctx.beginPath()
+    ctx.arc(x - 42, y - 20 + breathe, 2, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Water spray particles
+    if (animationFrame % 24 < 12) {
+      ctx.fillStyle = '#4ac8ff'
+      ctx.globalAlpha = 0.6
+      for (let i = 0; i < 4; i++) {
+        const px = x - 72 - i * 6 + Math.random() * 4
+        const py = y - 12 + breathe + Math.random() * 8 - 4
+        ctx.beginPath()
+        ctx.arc(px, py, 2 + Math.random() * 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.globalAlpha = 1.0
     }
   }
 

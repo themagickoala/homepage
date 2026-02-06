@@ -74,6 +74,20 @@
   transform: scale(1.05);
 }
 
+.level-select-label {
+  font-family: monospace;
+  font-size: 14px;
+  color: #aaaacc;
+  margin: 0 0 5px 0;
+}
+
+.level-hint {
+  display: block;
+  font-size: 12px;
+  color: #888899;
+  margin-top: 4px;
+}
+
 .title-controls {
   background: rgba(20, 20, 40, 0.8);
   padding: 20px 30px;

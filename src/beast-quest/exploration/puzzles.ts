@@ -17,8 +17,9 @@ export interface Puzzle {
   requiredState: Record<string, boolean> // Required entity states
 }
 
-// Puzzle definitions for Ferno's dungeon
+// Puzzle definitions for all dungeons
 export const DUNGEON_PUZZLES: Record<string, Puzzle> = {
+  // Ferno's dungeon
   puzzle_room_bridge: {
     id: 'puzzle_room_bridge',
     type: 'switch',
@@ -28,6 +29,20 @@ export const DUNGEON_PUZZLES: Record<string, Puzzle> = {
     requiredState: {
       puzzle_block_1: true,
       puzzle_block_2: true,
+    },
+  },
+
+  // Sepron's dungeon
+  tidal_locks: {
+    id: 'tidal_locks',
+    type: 'switch',
+    entities: ['tidal_switch_1', 'tidal_switch_2', 'tidal_switch_3'],
+    targetId: 'tidal_gate',
+    solved: false,
+    requiredState: {
+      tidal_switch_1: true,
+      tidal_switch_2: true,
+      tidal_switch_3: true,
     },
   },
 }
@@ -132,9 +147,14 @@ export function openChest(
  */
 function getChestContents(chestId: string): string[] {
   const contents: Record<string, string[]> = {
+    // Ferno's dungeon
     'main_cavern_chest_1': ['potion', 'potion'],
     'main_cavern_chest_2': ['ether', 'antidote'],
     'volcanic_passage_chest': ['hi_potion', 'fire_amulet'],
+    // Sepron's dungeon
+    'tidal_cavern_chest_1': ['potion', 'potion', 'antidote'],
+    'tidal_cavern_chest_2': ['ether', 'ice_shard'],
+    'coral_tunnel_chest': ['hi_potion', 'tidal_pendant'],
   }
 
   return contents[chestId] || ['potion']
@@ -160,6 +180,8 @@ export function getPuzzleHint(puzzleId: string): string {
   const hints: Record<string, string> = {
     puzzle_room_bridge:
       'Two ancient switches must be activated to lower the bridge.',
+    tidal_locks:
+      'Three ancient tidal locks must be opened to drain the passage.',
   }
 
   return hints[puzzleId] || 'An ancient mechanism blocks the way.'

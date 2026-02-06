@@ -138,7 +138,7 @@ export interface LootEntry {
   dropRate: number // 0-1
 }
 
-export type AIPattern = 'aggressive' | 'defensive' | 'balanced' | 'support' | 'boss_ferno'
+export type AIPattern = 'aggressive' | 'defensive' | 'balanced' | 'support' | 'boss_ferno' | 'boss_sepron'
 
 // --- Combat Types ---
 

@@ -24,7 +24,25 @@ import {
 import { TILE_COLORS, getTileHeight, isWalkable } from './tiles'
 import { drawCharacterSprite } from '../render/sprites'
 import { drawExplorationHUD, drawControlHints } from '../render/ui'
-import { getRoom, getEncounterZone } from '../data/ferno-dungeon'
+import { FERNO_DUNGEON, getEncounterZone as getFernoEncounterZone } from '../data/ferno-dungeon'
+import { SEPRON_DUNGEON, getEncounterZone as getSepronEncounterZone } from '../data/sepron-dungeon'
+import { DungeonFloor } from '../types'
+
+// Multi-dungeon support
+const DUNGEONS: Record<string, DungeonFloor> = {
+  ferno_cave: FERNO_DUNGEON,
+  sepron_lair: SEPRON_DUNGEON,
+}
+
+function getDungeonRoom(floorId: string, roomId: string) {
+  const dungeon = DUNGEONS[floorId]
+  return dungeon?.rooms.find((r) => r.id === roomId)
+}
+
+function getDungeonEncounterZone(floorId: string, room: DungeonRoom, position: { col: number; row: number }) {
+  if (floorId === 'sepron_lair') return getSepronEncounterZone(room, position)
+  return getFernoEncounterZone(room, position)
+}
 import { canInteract, DUNGEON_PUZZLES, checkPuzzleSolved, getPuzzleHint } from './puzzles'
 import { getRandomEncounter } from '../combat/enemies'
 
@@ -64,14 +82,14 @@ export function Dungeon({
 
   // Load current room
   useEffect(() => {
-    const room = getRoom(explorationState.currentRoomId)
+    const room = getDungeonRoom(explorationState.currentFloorId, explorationState.currentRoomId)
     setCurrentRoom(room || null)
     // Reset visual position immediately on room change (no animation)
     setVisualPosition(explorationState.playerPosition)
     moveStartTime.current = null
     moveStartPos.current = null
     moveEndPos.current = null
-  }, [explorationState.currentRoomId])
+  }, [explorationState.currentFloorId, explorationState.currentRoomId])
 
   // Sync visual position when player position changes outside of movement
   // (e.g., after returning from combat)
@@ -120,24 +138,33 @@ export function Dungeon({
     (position: IsoPosition) => {
       if (!currentRoom) return
 
-      const zone = getEncounterZone(currentRoom, position)
+      const zone = getDungeonEncounterZone(explorationState.currentFloorId, currentRoom, position)
       if (!zone) return
 
       // Roll for encounter
       if (Math.random() < zone.encounterRate) {
         // Get zone ID for encounter table
-        let zoneId = 'cave_entrance'
-        if (currentRoom.id === 'volcanic_passage' || currentRoom.id === 'ferno_lair') {
-          zoneId = 'volcanic_passage'
-        } else if (currentRoom.id === 'main_cavern' || currentRoom.id === 'puzzle_room') {
-          zoneId = 'cave_depths'
+        const zoneMap: Record<string, string> = {
+          // Ferno's dungeon
+          entrance: 'cave_entrance',
+          main_cavern: 'cave_depths',
+          puzzle_room: 'cave_depths',
+          volcanic_passage: 'volcanic_passage',
+          ferno_lair: 'volcanic_passage',
+          // Sepron's dungeon
+          grotto: 'coastal_grotto',
+          tidal_cavern: 'tidal_cavern',
+          submerged_passage: 'submerged_passage',
+          coral_tunnel: 'coral_tunnel',
+          sepron_depths: 'coral_tunnel',
         }
+        const zoneId = zoneMap[currentRoom.id] || 'cave_entrance'
 
         const enemies = getRandomEncounter(zoneId)
         onEncounter(enemies)
       }
     },
-    [currentRoom, onEncounter]
+    [currentRoom, onEncounter, explorationState.currentFloorId]
   )
 
   // Handle movement

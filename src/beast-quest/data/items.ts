@@ -245,6 +245,49 @@ export const ITEMS: Record<string, Item> = {
     equipStats: { attack: 5 },
   },
 
+  // --- Sepron's Dungeon Items ---
+
+  ice_blade: {
+    id: 'ice_blade',
+    name: 'Ice Blade',
+    description: 'A sword forged from enchanted ice, radiating cold',
+    type: 'weapon',
+    value: 600,
+    stackable: false,
+    maxStack: 1,
+    equipStats: { attack: 18, maxMp: 5 },
+  },
+  frost_bow: {
+    id: 'frost_bow',
+    name: 'Frost Bow',
+    description: 'A bow strung with frozen sinew, swift and deadly',
+    type: 'weapon',
+    value: 550,
+    stackable: false,
+    maxStack: 1,
+    equipStats: { attack: 14, speed: 5 },
+  },
+  tidal_pendant: {
+    id: 'tidal_pendant',
+    name: 'Tidal Pendant',
+    description: 'A glowing pearl pendant infused with ocean magic',
+    type: 'accessory',
+    value: 350,
+    stackable: false,
+    maxStack: 1,
+    equipStats: { maxMp: 15, speed: 3 },
+  },
+  ice_shard: {
+    id: 'ice_shard',
+    name: 'Ice Shard',
+    description: 'A crystallized shard of magic ice that restores 30 MP',
+    type: 'consumable',
+    value: 80,
+    stackable: true,
+    maxStack: 99,
+    effect: { type: 'heal_mp', value: 30 },
+  },
+
   // --- Key Items ---
 
   dungeon_key: {

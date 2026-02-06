@@ -30,8 +30,31 @@ import { GameMenu } from './components/GameMenu'
 import { SkillTree } from './components/SkillTree'
 import { Notifications, Notification } from './components/Notifications'
 import { createEnemyInstance } from './combat/enemies'
-import { DUNGEON_DIALOGUES, CHEST_CONTENTS } from './data/ferno-dungeon'
+import { DUNGEON_DIALOGUES as FERNO_DIALOGUES, CHEST_CONTENTS as FERNO_CHESTS } from './data/ferno-dungeon'
+import { DUNGEON_DIALOGUES as SEPRON_DIALOGUES, CHEST_CONTENTS as SEPRON_CHESTS } from './data/sepron-dungeon'
 import { ITEMS } from './data/items'
+
+// Merge dialogue and chest data from all dungeons
+const ALL_DIALOGUES = { ...FERNO_DIALOGUES, ...SEPRON_DIALOGUES } as Record<string, unknown>
+const ALL_CHESTS: Record<string, string[]> = { ...FERNO_CHESTS, ...SEPRON_CHESTS }
+
+// Boss metadata for dynamic victory screen
+const BOSS_INFO: Record<string, { name: string; tokenId: string; tokenName: string; tokenBonus: string; flagId: string }> = {
+  ferno: {
+    name: 'Ferno the Fire Dragon',
+    tokenId: 'dragon_scale',
+    tokenName: 'Dragon Scale',
+    tokenBonus: '+10 Max HP, +2 Defense',
+    flagId: 'ferno_defeated',
+  },
+  sepron: {
+    name: 'Sepron the Sea Serpent',
+    tokenId: 'serpent_tooth',
+    tokenName: 'Serpent Tooth',
+    tokenBonus: '+10 Max MP, +2 Speed',
+    flagId: 'sepron_defeated',
+  },
+}
 import { collectToken } from './data/shield-tokens'
 import { TutorialOverlay } from './components/TutorialOverlay'
 import { TUTORIALS } from './data/tutorials'
@@ -44,6 +67,7 @@ export function Game() {
   const [currentDialogue, setCurrentDialogue] = useState<Dialogue | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [pendingTutorial, setPendingTutorial] = useState<string | null>(null)
+  const [defeatedBossId, setDefeatedBossId] = useState<string | null>(null)
   const playTimeRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const notificationIdRef = useRef(0)
 
@@ -66,9 +90,10 @@ export function Game() {
   }, [pendingTutorial])
 
   // Start new game
-  const handleNewGame = useCallback(() => {
-    setGameState(createNewGameState())
+  const handleNewGame = useCallback((dungeonId?: string) => {
+    setGameState(createNewGameState(dungeonId))
     setShowTitle(false)
+    setDefeatedBossId(null)
     setPendingTutorial('tutorial_game_start')
   }, [])
 
@@ -164,7 +189,7 @@ export function Game() {
     switch (entity.type) {
       case 'npc':
         const dialogueId = entity.metadata?.dialogueId as string
-        const dialogue = DUNGEON_DIALOGUES[dialogueId as keyof typeof DUNGEON_DIALOGUES]
+        const dialogue = ALL_DIALOGUES[dialogueId]
         if (dialogue) {
           setCurrentDialogue(dialogue as unknown as Dialogue)
           setGameState((prev) => (prev ? { ...prev, phase: 'dialogue' } : prev))
@@ -177,7 +202,7 @@ export function Game() {
           // Check if already opened
           if (prev.exploration.openedChests.includes(entity.id)) return prev
 
-          const contents = CHEST_CONTENTS[entity.id] || ['potion']
+          const contents = ALL_CHESTS[entity.id] || ['potion']
           const items = contents
             .map((id) => {
               const item = ITEMS[id]
@@ -283,16 +308,18 @@ export function Game() {
           setTimeout(() => setPendingTutorial('tutorial_level_up'), 0)
         }
 
-        // Check if boss was defeated (Ferno)
-        const defeatedBoss = currentEnemies.some((e) => e.type === 'boss')
+        // Check if boss was defeated
+        const defeatedBoss = currentEnemies.find((e) => e.type === 'boss')
         if (defeatedBoss) {
-          // Collect Dragon Scale token
-          newState = {
-            ...newState,
-            shieldTokens: collectToken(newState.shieldTokens, 'dragon_scale'),
+          const bossInfo = BOSS_INFO[defeatedBoss.id]
+          if (bossInfo) {
+            newState = {
+              ...newState,
+              shieldTokens: collectToken(newState.shieldTokens, bossInfo.tokenId),
+            }
+            newState = setFlag(newState, bossInfo.flagId)
+            setTimeout(() => setDefeatedBossId(defeatedBoss.id), 0)
           }
-          newState = setFlag(newState, 'ferno_defeated')
-          // Show victory/quest complete screen
           return { ...newState, phase: 'victory' }
         }
 
@@ -413,9 +440,17 @@ export function Game() {
       <div className="beast-quest-title">
         <div className="title-content">
           <h1>Beast Quest</h1>
-          <p className="subtitle">Ferno's Cave - Demo</p>
+          <p className="subtitle">Choose Your Quest</p>
           <div className="title-menu">
-            <button onClick={handleNewGame}>New Game</button>
+            <p className="level-select-label">Select Quest:</p>
+            <button onClick={() => handleNewGame('ferno_cave')}>
+              Ferno's Cave
+              <span className="level-hint">Level 1+</span>
+            </button>
+            <button onClick={() => handleNewGame('sepron_lair')}>
+              Sepron's Lair
+              <span className="level-hint">Level 5+</span>
+            </button>
             <button
               onClick={() => {
                 const code = prompt('Enter save code:')
@@ -451,7 +486,7 @@ export function Game() {
           <h1>Game Over</h1>
           <p>Your quest has ended...</p>
           <div className="gameover-options">
-            <button onClick={handleNewGame}>Try Again</button>
+            <button onClick={() => handleNewGame()}>Try Again</button>
             <button onClick={handleQuit}>Title Screen</button>
           </div>
         </div>
@@ -459,30 +494,27 @@ export function Game() {
     )
   }
 
-  // Victory screen (after defeating Ferno)
+  // Victory screen (after defeating a boss)
   if (gameState.phase === 'victory') {
+    const bossInfo = defeatedBossId ? BOSS_INFO[defeatedBossId] : BOSS_INFO.ferno
     return (
       <div className="beast-quest-victory">
         <div className="victory-content">
           <h1>Quest Complete!</h1>
           <div className="victory-beast">
             <div className="beast-defeated-icon" />
-            <h2>Ferno the Fire Dragon</h2>
+            <h2>{bossInfo.name}</h2>
             <p className="beast-subtitle">Has Been Defeated!</p>
           </div>
           <div className="victory-reward">
             <div className="token-icon" />
-            <p>The <strong>Dragon Scale</strong> has been added to Tom's shield.</p>
-            <p className="token-bonus">+10 Max HP, +2 Defense</p>
+            <p>The <strong>{bossInfo.tokenName}</strong> has been added to Tom's shield.</p>
+            <p className="token-bonus">{bossInfo.tokenBonus}</p>
           </div>
           <div className="victory-stats">
             <p>Tom - Level {gameState.party[0]?.stats.level}</p>
             <p>Elenna - Level {gameState.party[1]?.stats.level}</p>
             <p>Play Time: {Math.floor(gameState.playTime / 60)}:{String(gameState.playTime % 60).padStart(2, '0')}</p>
-          </div>
-          <div className="victory-coming-soon">
-            <p>Thank you for playing the Beast Quest demo!</p>
-            <p className="coming-soon-text">More levels coming soon...</p>
           </div>
           <div className="victory-options">
             <button onClick={handleQuit}>Return to Title</button>
