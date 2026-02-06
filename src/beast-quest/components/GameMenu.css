@@ -76,6 +76,11 @@
   color: #aaaaff;
 }
 
+/* Wide panel for detail view */
+.game-menu-panel.wide {
+  width: 500px;
+}
+
 /* Status Section */
 .status-section {
   padding: 15px;
@@ -95,7 +100,26 @@
   border: 1px solid #4a4a6a;
   border-radius: 4px;
   padding: 12px;
+  padding-left: 24px;
   margin-bottom: 10px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.status-card:hover,
+.status-card.selected {
+  background: rgba(50, 50, 100, 0.6);
+  border-color: #6a6aaa;
+}
+
+.status-cursor {
+  position: absolute;
+  left: 6px;
+  top: 12px;
+  color: #aaaaff;
+  font-family: monospace;
+  font-size: 14px;
 }
 
 .status-header {
@@ -154,6 +178,10 @@
 
 .bar-fill.mp {
   background: #2266dd;
+}
+
+.bar-fill.xp {
+  background: #ddaa22;
 }
 
 .bar-value {
@@ -259,6 +287,122 @@
 .back-button:hover {
   background: rgba(60, 60, 80, 0.5);
   color: #aaaacc;
+}
+
+/* Status Detail Section */
+.status-detail {
+  padding: 15px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.status-detail h3 {
+  margin: 0 0 5px 0;
+  color: #aaaaff;
+  font-family: monospace;
+  font-size: 18px;
+}
+
+.detail-header {
+  margin-bottom: 15px;
+}
+
+.detail-level {
+  color: #888899;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.detail-xp {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.detail-equipment {
+  margin-bottom: 15px;
+}
+
+.detail-equipment h4 {
+  margin: 0 0 8px 0;
+  color: #cccccc;
+  font-family: monospace;
+  font-size: 13px;
+  border-bottom: 1px solid #3a3a5a;
+  padding-bottom: 4px;
+}
+
+.equip-slot {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.slot-label {
+  color: #888899;
+  width: 80px;
+}
+
+.slot-value {
+  color: #ccccdd;
+}
+
+.slot-value.empty {
+  color: #555566;
+  font-style: italic;
+}
+
+.detail-stats-table {
+  margin-bottom: 10px;
+}
+
+.detail-stats-table h4 {
+  margin: 0 0 8px 0;
+  color: #cccccc;
+  font-family: monospace;
+  font-size: 13px;
+  border-bottom: 1px solid #3a3a5a;
+  padding-bottom: 4px;
+}
+
+.stats-header-row,
+.stats-row {
+  display: flex;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 3px 0;
+}
+
+.stats-header-row {
+  color: #666688;
+  border-bottom: 1px solid #2a2a4a;
+  margin-bottom: 2px;
+}
+
+.stat-name-col {
+  width: 70px;
+  color: #888899;
+}
+
+.stat-col {
+  width: 60px;
+  text-align: right;
+  color: #aaaabb;
+}
+
+.stat-col.total-col {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.stat-col.bonus-positive {
+  color: #88ff88;
+}
+
+.stat-col.bonus-negative {
+  color: #ff8888;
 }
 
 .menu-footer {

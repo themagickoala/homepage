@@ -15,6 +15,7 @@ function parseTileMap(map: string[]): TileType[][] {
     'D': 'door',
     'C': 'chest',
     '*': 'healing_pool',
+    'E': 'exit',
   }
 
   return map.map((row) =>
@@ -33,10 +34,10 @@ const VILLAGE_SQUARE_MAP = [
   '#......~~......#',
   '#......~~......#',
   '#..............#',
-  'D..............D',
   '#..............#',
   '#..............#',
-  '################',
+  '#..............#',
+  '#######DD#######',
 ]
 
 const villageSquare: DungeonRoom = {
@@ -129,7 +130,7 @@ const weaponShop: DungeonRoom = {
       sprite: 'npc_shopkeeper',
       direction: 'south',
       interactable: true,
-      metadata: { dialogueId: 'blacksmith' },
+      metadata: { dialogueId: 'blacksmith', shopId: 'errinel_blacksmith' },
     },
     {
       id: 'weapon_shop_chest',
@@ -177,7 +178,7 @@ const generalStore: DungeonRoom = {
       sprite: 'npc_shopkeeper',
       direction: 'south',
       interactable: true,
-      metadata: { dialogueId: 'shopkeeper' },
+      metadata: { dialogueId: 'shopkeeper', shopId: 'errinel_general_store' },
     },
     {
       id: 'general_store_chest',
@@ -201,17 +202,17 @@ const generalStore: DungeonRoom = {
 
 // --- Village Outskirts ---
 const VILLAGE_OUTSKIRTS_MAP = [
-  '################',
+  '#######DD#######',
   '#..............#',
   '#..............#',
   '#..............#',
   '#..............#',
   '#..............#',
   '#..............#',
-  '#..............D',
   '#..............#',
   '#..............#',
-  '################',
+  '#..............#',
+  '#######EE#######',
 ]
 
 const villageOutskirts: DungeonRoom = {
@@ -243,7 +244,7 @@ const villageOutskirts: DungeonRoom = {
   encounters: [],
   connections: [
     {
-      direction: 'east',
+      direction: 'north',
       targetRoomId: 'village_square',
       targetPosition: { col: 7, row: 11 },
     },

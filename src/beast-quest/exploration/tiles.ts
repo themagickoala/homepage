@@ -70,6 +70,12 @@ export const TILE_COLORS: Record<
     right: '#2a6a4a',
     highlight: '#6aaa8a',
   },
+  exit: {
+    top: '#8a7a5a',
+    left: '#7a6a4a',
+    right: '#6a5a3a',
+    highlight: '#aa9a7a',
+  },
 }
 
 // Tile definitions with properties
@@ -143,6 +149,12 @@ export const TILES: Record<TileType, Tile> = {
     type: 'healing_pool',
     walkable: true,
     sprite: 'tile_healing_pool',
+    interactable: true,
+  },
+  exit: {
+    type: 'exit',
+    walkable: true,
+    sprite: 'tile_exit',
     interactable: true,
   },
 }

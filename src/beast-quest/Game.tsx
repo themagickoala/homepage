@@ -4,7 +4,7 @@
 // Orchestrates all game systems and manages overall state
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { GameState, MapEntity, IsoPosition, Dialogue, Enemy } from './types'
+import { GameState, GamePhase, MapEntity, IsoPosition, Dialogue, Enemy, ShopData } from './types'
 import {
   createNewGameState,
   serializeGameState,
@@ -22,6 +22,8 @@ import {
   setFlag,
   hasFlag,
   learnSkill,
+  enterWorldMap,
+  travelToLocation,
 } from './gameState'
 import { Dungeon } from './exploration/Dungeon'
 import { CombatSystem } from './combat/CombatSystem'
@@ -30,6 +32,10 @@ import { InventoryUI } from './components/InventoryUI'
 import { GameMenu } from './components/GameMenu'
 import { SkillTree } from './components/SkillTree'
 import { Notifications, Notification } from './components/Notifications'
+import { WorldMap } from './components/WorldMap'
+import { ShopUI } from './components/ShopUI'
+import { WORLD_MAP_LOCATIONS, SHOPS } from './data/world-map'
+import { getFloor } from './data/floor-registry'
 import { createEnemyInstance } from './combat/enemies'
 import { DUNGEON_DIALOGUES as FERNO_DIALOGUES, CHEST_CONTENTS as FERNO_CHESTS } from './data/ferno-dungeon'
 import { DUNGEON_DIALOGUES as SEPRON_DIALOGUES, CHEST_CONTENTS as SEPRON_CHESTS } from './data/sepron-dungeon'
@@ -73,6 +79,8 @@ export function Game() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [pendingTutorial, setPendingTutorial] = useState<string | null>(null)
   const [defeatedBossId, setDefeatedBossId] = useState<string | null>(null)
+  const [currentShop, setCurrentShop] = useState<ShopData | null>(null)
+  const [preMenuPhase, setPreMenuPhase] = useState<GamePhase>('exploring')
   const playTimeRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const notificationIdRef = useRef(0)
 
@@ -95,8 +103,8 @@ export function Game() {
   }, [pendingTutorial])
 
   // Start new game
-  const handleNewGame = useCallback((dungeonId?: string) => {
-    setGameState(createNewGameState(dungeonId))
+  const handleNewGame = useCallback(() => {
+    setGameState(createNewGameState())
     setShowTitle(false)
     setDefeatedBossId(null)
     setPendingTutorial('tutorial_game_start')
@@ -121,7 +129,7 @@ export function Game() {
 
   // Play time counter
   useEffect(() => {
-    if (!gameState || gameState.phase !== 'exploring') return
+    if (!gameState || (gameState.phase !== 'exploring' && gameState.phase !== 'world_map')) return
 
     playTimeRef.current = setInterval(() => {
       setGameState((prev) => (prev ? updatePlayTime(prev) : prev))
@@ -193,6 +201,13 @@ export function Game() {
   const handleInteract = useCallback((entity: MapEntity) => {
     switch (entity.type) {
       case 'npc': {
+        // Check if NPC has a shop
+        const shopId = entity.metadata?.shopId as string | undefined
+        if (shopId && SHOPS[shopId]) {
+          setCurrentShop(SHOPS[shopId])
+          setGameState((prev) => (prev ? { ...prev, phase: 'shop' as const } : prev))
+          break
+        }
         const dialogueId = entity.metadata?.dialogueId as string
         const dialogue = ALL_DIALOGUES[dialogueId]
         if (dialogue) {
@@ -324,6 +339,23 @@ export function Game() {
               shieldTokens: collectToken(newState.shieldTokens, bossInfo.tokenId),
             }
             newState = setFlag(newState, bossInfo.flagId)
+            // Discover locations unlocked by this boss defeat
+            const newDiscovered = [...newState.worldMap.discoveredLocations]
+            for (const loc of Object.values(WORLD_MAP_LOCATIONS)) {
+              if (
+                loc.unlockCondition === bossInfo.flagId &&
+                !newDiscovered.includes(loc.id)
+              ) {
+                newDiscovered.push(loc.id)
+              }
+            }
+            newState = {
+              ...newState,
+              worldMap: {
+                ...newState.worldMap,
+                discoveredLocations: newDiscovered,
+              },
+            }
             setTimeout(() => setDefeatedBossId(defeatedBoss.id), 0)
           }
           return { ...newState, phase: 'victory' }
@@ -373,6 +405,7 @@ export function Game() {
   const openMenu = useCallback(() => {
     setGameState((prev) => {
       if (!prev) return prev
+      setPreMenuPhase(prev.phase)
       if (!hasFlag(prev, 'tutorial_menu')) {
         setTimeout(() => setPendingTutorial('tutorial_menu'), 0)
       }
@@ -381,8 +414,8 @@ export function Game() {
   }, [])
 
   const closeMenu = useCallback(() => {
-    setGameState((prev) => (prev ? { ...prev, phase: 'exploring' } : prev))
-  }, [])
+    setGameState((prev) => (prev ? { ...prev, phase: preMenuPhase } : prev))
+  }, [preMenuPhase])
 
   const openInventory = useCallback(() => {
     setGameState((prev) => {
@@ -426,6 +459,79 @@ export function Game() {
     })
   }, [addNotification])
 
+  // Exit dungeon/village to world map
+  const handleExitToWorldMap = useCallback(() => {
+    setGameState((prev) => (prev ? enterWorldMap(prev) : prev))
+  }, [])
+
+  // Travel to a world map location
+  const handleTravel = useCallback((locationId: string) => {
+    const location = WORLD_MAP_LOCATIONS[locationId]
+    if (!location) return
+
+    const floor = getFloor(location.floorId)
+    if (!floor) {
+      addNotification('info', `${location.name} - Coming soon...`)
+      return
+    }
+
+    setGameState((prev) => (prev ? travelToLocation(prev, locationId, floor) : prev))
+  }, [addNotification])
+
+  // Buy an item from shop
+  const handleBuyItem = useCallback((itemId: string) => {
+    setGameState((prev) => {
+      if (!prev) return prev
+      const item = ITEMS[itemId]
+      if (!item || prev.gold < item.value) return prev
+
+      // Add item to inventory
+      const existingIndex = prev.inventory.findIndex((s) => s.item.id === itemId)
+      let newInventory = [...prev.inventory]
+      if (existingIndex >= 0 && item.stackable) {
+        newInventory[existingIndex] = {
+          ...newInventory[existingIndex],
+          quantity: Math.min(newInventory[existingIndex].quantity + 1, item.maxStack),
+        }
+      } else {
+        newInventory.push({ item, quantity: 1 })
+      }
+
+      return { ...prev, inventory: newInventory, gold: prev.gold - item.value }
+    })
+  }, [])
+
+  // Sell an item from inventory
+  const handleSellItem = useCallback((itemId: string) => {
+    setGameState((prev) => {
+      if (!prev) return prev
+      const item = ITEMS[itemId]
+      if (!item) return prev
+      const sellPrice = Math.floor(item.value / 2)
+
+      const newInventory = prev.inventory
+        .map((slot) => {
+          if (slot.item.id !== itemId) return slot
+          return { ...slot, quantity: slot.quantity - 1 }
+        })
+        .filter((slot) => slot.quantity > 0)
+
+      return { ...prev, inventory: newInventory, gold: prev.gold + sellPrice }
+    })
+  }, [])
+
+  // Close shop
+  const closeShop = useCallback(() => {
+    setCurrentShop(null)
+    setGameState((prev) => (prev ? { ...prev, phase: 'exploring' as const } : prev))
+  }, [])
+
+  // Continue from victory to world map
+  const handleContinueFromVictory = useCallback(() => {
+    setGameState((prev) => (prev ? enterWorldMap(prev) : prev))
+    setDefeatedBossId(null)
+  }, [])
+
   const handleQuit = useCallback(() => {
     setGameState(null)
     setShowTitle(true)
@@ -451,16 +557,10 @@ export function Game() {
       <div className="beast-quest-title">
         <div className="title-content">
           <h1>Beast Quest</h1>
-          <p className="subtitle">Choose Your Quest</p>
+          <p className="subtitle">The Quest Begins</p>
           <div className="title-menu">
-            <p className="level-select-label">Select Quest:</p>
-            <button onClick={() => handleNewGame('ferno_cave')}>
-              Ferno's Cave
-              <span className="level-hint">Level 1+</span>
-            </button>
-            <button onClick={() => handleNewGame('sepron_lair')}>
-              Sepron's Lair
-              <span className="level-hint">Level 5+</span>
+            <button onClick={() => handleNewGame()}>
+              New Quest
             </button>
             <button
               onClick={() => {
@@ -528,6 +628,7 @@ export function Game() {
             <p>Play Time: {Math.floor(gameState.playTime / 60)}:{String(gameState.playTime % 60).padStart(2, '0')}</p>
           </div>
           <div className="victory-options">
+            <button onClick={handleContinueFromVictory}>Continue Quest</button>
             <button onClick={handleQuit}>Return to Title</button>
           </div>
         </div>
@@ -545,6 +646,16 @@ export function Game() {
         <TutorialOverlay tutorial={TUTORIALS[pendingTutorial]} onDismiss={dismissTutorial} />
       )}
 
+      {/* World Map */}
+      {gameState.phase === 'world_map' && (
+        <WorldMap
+          worldMapState={gameState.worldMap}
+          flags={gameState.flags}
+          onTravel={handleTravel}
+          onOpenMenu={openMenu}
+        />
+      )}
+
       {/* Exploration */}
       {gameState.phase === 'exploring' && (
         <Dungeon
@@ -554,6 +665,7 @@ export function Game() {
           onEncounter={handleEncounter}
           onInteract={handleInteract}
           onRoomChange={handleRoomChange}
+          onExitToWorldMap={handleExitToWorldMap}
         />
       )}
 
@@ -603,10 +715,23 @@ export function Game() {
         />
       )}
 
+      {/* Shop */}
+      {gameState.phase === 'shop' && currentShop && (
+        <ShopUI
+          shop={currentShop}
+          inventory={gameState.inventory}
+          gold={gameState.gold}
+          onBuy={handleBuyItem}
+          onSell={handleSellItem}
+          onClose={closeShop}
+        />
+      )}
+
       {/* Game Menu */}
       {gameState.phase === 'menu' && (
         <GameMenu
           party={gameState.party}
+          shieldTokens={gameState.shieldTokens}
           playTime={gameState.playTime}
           onResume={closeMenu}
           onInventory={openInventory}

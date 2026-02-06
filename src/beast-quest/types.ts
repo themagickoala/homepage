@@ -210,6 +210,7 @@ export type TileType =
   | 'stairs_up'
   | 'stairs_down'
   | 'healing_pool'
+  | 'exit'
 
 export interface Tile {
   type: TileType
@@ -332,6 +333,37 @@ export type GamePhase =
   | 'skill_tree'
   | 'game_over'
   | 'victory'
+  | 'world_map'
+  | 'shop'
+
+export interface WorldMapState {
+  currentLocationId: string
+  discoveredLocations: string[]
+  travelingTo: string | null
+}
+
+export interface WorldMapLocation {
+  id: string
+  name: string
+  type: 'village' | 'dungeon' | 'landmark'
+  x: number
+  y: number
+  floorId: string
+  connectedTo: string[]
+  unlockCondition: string | null
+  description: string
+}
+
+export interface ShopItem {
+  itemId: string
+  stock: number // -1 for unlimited
+}
+
+export interface ShopData {
+  id: string
+  name: string
+  items: ShopItem[]
+}
 
 export interface ExplorationState {
   currentFloorId: string
@@ -353,6 +385,7 @@ export interface GameState {
   companions: Companion[]
   shieldTokens: ShieldToken[]
   exploration: ExplorationState
+  worldMap: WorldMapState
   combat: CombatState | null
   currentDialogue: Dialogue | null
   currentDialogueNodeId: string | null

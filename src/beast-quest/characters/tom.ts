@@ -131,7 +131,7 @@ export const TOM_SKILL_TREE: SkillTreeNode[] = [
   {
     skill: TOM_SKILLS[4], // Shield Bash
     levelRequired: 5,
-    prerequisiteSkillIds: ['tom_shield_guard'],
+    prerequisiteSkillIds: ['tom_defend'],
     position: { x: -1, y: 2 },
   },
   {

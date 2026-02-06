@@ -4,11 +4,13 @@
 // Main pause menu with save/load and options
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { PartyMember } from '../types'
+import { PartyMember, ShieldToken } from '../types'
+import { calculateTokenBonuses } from '../data/shield-tokens'
 import './GameMenu.css'
 
 interface GameMenuProps {
   party: PartyMember[]
+  shieldTokens: ShieldToken[]
   playTime: number
   onResume: () => void
   onInventory: () => void
@@ -18,10 +20,33 @@ interface GameMenuProps {
   onQuit: () => void
 }
 
-type MenuSection = 'main' | 'status' | 'save' | 'load'
+type MenuSection = 'main' | 'status' | 'status_detail' | 'save' | 'load'
+
+const STAT_KEYS = ['maxHp', 'maxMp', 'attack', 'defense', 'speed'] as const
+const STAT_LABELS: Record<(typeof STAT_KEYS)[number], string> = {
+  maxHp: 'Max HP',
+  maxMp: 'Max MP',
+  attack: 'ATK',
+  defense: 'DEF',
+  speed: 'SPD',
+}
+
+function getEquipmentBonuses(member: PartyMember) {
+  const bonuses = { maxHp: 0, maxMp: 0, attack: 0, defense: 0, speed: 0 }
+  for (const slot of ['weapon', 'armor', 'accessory'] as const) {
+    const item = member.equipment[slot]
+    if (item?.equipStats) {
+      for (const key of STAT_KEYS) {
+        bonuses[key] += (item.equipStats as Record<string, number>)[key] || 0
+      }
+    }
+  }
+  return bonuses
+}
 
 export function GameMenu({
   party,
+  shieldTokens,
   playTime,
   onResume,
   onInventory,
@@ -32,6 +57,7 @@ export function GameMenu({
 }: GameMenuProps) {
   const [section, setSection] = useState<MenuSection>('main')
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [selectedMemberIndex, setSelectedMemberIndex] = useState(0)
   const [saveCode, setSaveCode] = useState('')
   const [loadCode, setLoadCode] = useState('')
   const [message, setMessage] = useState('')
@@ -49,11 +75,13 @@ export function GameMenu({
     { label: 'Resume', action: onResume },
     { label: 'Inventory', action: onInventory },
     { label: 'Skills', action: onSkillTree },
-    { label: 'Status', action: () => setSection('status') },
+    { label: 'Status', action: () => { setSection('status'); setSelectedIndex(0) } },
     { label: 'Save', action: () => setSection('save') },
     { label: 'Load', action: () => setSection('load') },
     { label: 'Quit', action: onQuit },
   ], [onResume, onInventory, onSkillTree, onQuit])
+
+  const tokenBonuses = useMemo(() => calculateTokenBonuses(shieldTokens), [shieldTokens])
 
   // Handle save
   const handleSave = useCallback(() => {
@@ -94,6 +122,13 @@ export function GameMenu({
         return
       }
 
+      if (section === 'status_detail') {
+        if (e.key === 'Escape') {
+          setSection('status')
+        }
+        return
+      }
+
       switch (e.key) {
         case 'ArrowUp':
           setSelectedIndex((prev) => Math.max(0, prev - 1))
@@ -110,6 +145,9 @@ export function GameMenu({
         case ' ':
           if (section === 'main') {
             mainOptions[selectedIndex].action()
+          } else if (section === 'status') {
+            setSelectedMemberIndex(selectedIndex)
+            setSection('status_detail')
           }
           break
         case 'Escape':
@@ -126,9 +164,12 @@ export function GameMenu({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [section, selectedIndex, mainOptions, party, onResume])
 
+  // Selected member for detail view
+  const detailMember = party[selectedMemberIndex]
+
   return (
     <div className="game-menu-overlay">
-      <div className="game-menu-panel">
+      <div className={`game-menu-panel ${section === 'status_detail' ? 'wide' : ''}`}>
         <div className="menu-header">
           <h2>Menu</h2>
           <span className="play-time">Time: {formatTime(playTime)}</span>
@@ -153,8 +194,18 @@ export function GameMenu({
         {section === 'status' && (
           <div className="status-section">
             <h3>Party Status</h3>
-            {party.map((member) => (
-              <div key={member.id} className="status-card">
+            {party.map((member, index) => (
+              <div
+                key={member.id}
+                className={`status-card ${index === selectedIndex ? 'selected' : ''}`}
+                onClick={() => {
+                  setSelectedIndex(index)
+                  setSelectedMemberIndex(index)
+                  setSection('status_detail')
+                }}
+                onMouseEnter={() => setSelectedIndex(index)}
+              >
+                {index === selectedIndex && <span className="status-cursor">▶</span>}
                 <div className="status-header">
                   <span className="member-name">{member.name}</span>
                   <span className="member-level">Lv. {member.stats.level}</span>
@@ -201,6 +252,89 @@ export function GameMenu({
             </button>
           </div>
         )}
+
+        {section === 'status_detail' && detailMember && (() => {
+          const equipBonuses = getEquipmentBonuses(detailMember)
+          return (
+            <div className="status-detail">
+              <h3>{detailMember.name}</h3>
+              <div className="detail-header">
+                <span className="detail-level">Level {detailMember.stats.level}</span>
+                <div className="detail-xp">
+                  <span className="bar-label">XP</span>
+                  <div className="bar-container">
+                    <div
+                      className="bar-fill xp"
+                      style={{
+                        width: `${(detailMember.stats.experience / detailMember.stats.experienceToNextLevel) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="bar-value">
+                    {detailMember.stats.experience}/{detailMember.stats.experienceToNextLevel}
+                  </span>
+                </div>
+              </div>
+
+              <div className="detail-equipment">
+                <h4>Equipment</h4>
+                <div className="equip-slot">
+                  <span className="slot-label">Weapon</span>
+                  <span className={`slot-value ${detailMember.equipment.weapon ? '' : 'empty'}`}>
+                    {detailMember.equipment.weapon?.name || 'Empty'}
+                  </span>
+                </div>
+                <div className="equip-slot">
+                  <span className="slot-label">Armor</span>
+                  <span className={`slot-value ${detailMember.equipment.armor ? '' : 'empty'}`}>
+                    {detailMember.equipment.armor?.name || 'Empty'}
+                  </span>
+                </div>
+                <div className="equip-slot">
+                  <span className="slot-label">Accessory</span>
+                  <span className={`slot-value ${detailMember.equipment.accessory ? '' : 'empty'}`}>
+                    {detailMember.equipment.accessory?.name || 'Empty'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="detail-stats-table">
+                <h4>Stats</h4>
+                <div className="stats-header-row">
+                  <span className="stat-name-col"></span>
+                  <span className="stat-col">Base</span>
+                  <span className="stat-col">Equip</span>
+                  <span className="stat-col">Token</span>
+                  <span className="stat-col total-col">Total</span>
+                </div>
+                {STAT_KEYS.map((key) => {
+                  const total = detailMember.stats[key]
+                  const equip = equipBonuses[key]
+                  const token = tokenBonuses[key]
+                  const base = total - equip - token
+
+                  return (
+                    <div key={key} className="stats-row">
+                      <span className="stat-name-col">{STAT_LABELS[key]}</span>
+                      <span className="stat-col">{base}</span>
+                      <span className={`stat-col ${equip > 0 ? 'bonus-positive' : equip < 0 ? 'bonus-negative' : ''}`}>
+                        {equip !== 0 ? (equip > 0 ? `+${equip}` : `${equip}`) : '-'}
+                      </span>
+                      <span className={`stat-col ${token > 0 ? 'bonus-positive' : ''}`}>
+                        {token > 0 ? `+${token}` : '-'}
+                      </span>
+                      <span className="stat-col total-col">{total}</span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <button className="back-button" onClick={() => setSection('status')}>
+                Back
+              </button>
+            </div>
+          )
+        })()}
 
         {section === 'save' && (
           <div className="save-section">
@@ -259,7 +393,11 @@ export function GameMenu({
         )}
 
         <div className="menu-footer">
-          <span>↑↓ Navigate | Enter: Select | Esc: {section === 'main' ? 'Close' : 'Back'}</span>
+          <span>
+            {section === 'status'
+              ? '↑↓ Navigate | Enter: Inspect | Esc: Back'
+              : `↑↓ Navigate | Enter: Select | Esc: ${section === 'main' ? 'Close' : 'Back'}`}
+          </span>
         </div>
       </div>
     </div>

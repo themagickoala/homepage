@@ -20,6 +20,7 @@ function parseTileMap(map: string[]): TileType[][] {
     '^': 'stairs_up',
     'v': 'stairs_down',
     '*': 'healing_pool',
+    'E': 'exit',
   }
 
   return map.map((row) =>
@@ -33,7 +34,7 @@ const ENTRANCE_MAP = [
   '#........#',
   '#........#',
   '#..*.....#',
-  '#........#',
+  'E........#',
   '#........#',
   '#........D',
   '#........#',

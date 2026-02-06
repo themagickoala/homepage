@@ -3,46 +3,42 @@
 // ============================================
 // State creation, updates, and save/load serialization
 
-import { GameState, SaveData, ExplorationState, PartyMember, InventorySlot } from './types'
+import { GameState, SaveData, ExplorationState, WorldMapState, PartyMember, InventorySlot, DungeonFloor } from './types'
 import { createTom } from './characters/tom'
 import { createElenna } from './characters/elenna'
 import { createCompanions } from './characters/companions'
 import { createShieldTokens } from './data/shield-tokens'
 import { createStartingInventory, getTomStartingEquipment, getElennaStartingEquipment } from './data/items'
-import { FERNO_DUNGEON } from './data/ferno-dungeon'
-import { SEPRON_DUNGEON } from './data/sepron-dungeon'
-import { DungeonFloor } from './types'
+import { ERRINEL_VILLAGE } from './data/errinel-village'
 
-const SAVE_VERSION = '1.0.0'
-
-// Available dungeons
-const DUNGEONS: Record<string, DungeonFloor> = {
-  ferno_cave: FERNO_DUNGEON,
-  sepron_lair: SEPRON_DUNGEON,
-}
+const SAVE_VERSION = '1.1.0'
 
 /**
  * Create a new game state
  */
-export function createNewGameState(dungeonId: string = 'ferno_cave'): GameState {
-  const dungeon = DUNGEONS[dungeonId] || FERNO_DUNGEON
+export function createNewGameState(): GameState {
   const tom = createTom()
   const elenna = createElenna()
 
-  // Apply starting equipment
   tom.equipment = getTomStartingEquipment()
   elenna.equipment = getElennaStartingEquipment()
 
   const initialExploration: ExplorationState = {
-    currentFloorId: dungeon.id,
-    currentRoomId: dungeon.startRoomId,
-    playerPosition: { ...dungeon.startPosition },
+    currentFloorId: ERRINEL_VILLAGE.id,
+    currentRoomId: ERRINEL_VILLAGE.startRoomId,
+    playerPosition: { ...ERRINEL_VILLAGE.startPosition },
     playerDirection: 'south',
-    visitedRooms: [dungeon.startRoomId],
+    visitedRooms: [ERRINEL_VILLAGE.startRoomId],
     openedChests: [],
     activatedSwitches: [],
     stepsSinceLastEncounter: 0,
     stepsForMpRecovery: 0,
+  }
+
+  const initialWorldMap: WorldMapState = {
+    currentLocationId: 'errinel_village',
+    discoveredLocations: ['errinel_village', 'ferno_cave'],
+    travelingTo: null,
   }
 
   return {
@@ -53,11 +49,61 @@ export function createNewGameState(dungeonId: string = 'ferno_cave'): GameState 
     companions: createCompanions(),
     shieldTokens: createShieldTokens(),
     exploration: initialExploration,
+    worldMap: initialWorldMap,
     combat: null,
     currentDialogue: null,
     currentDialogueNodeId: null,
     flags: {},
     playTime: 0,
+  }
+}
+
+/**
+ * Transition from exploration to world map
+ */
+export function enterWorldMap(state: GameState): GameState {
+  return {
+    ...state,
+    phase: 'world_map',
+    worldMap: {
+      ...state.worldMap,
+      travelingTo: null,
+    },
+  }
+}
+
+/**
+ * Travel to a world map location
+ */
+export function travelToLocation(
+  state: GameState,
+  locationId: string,
+  floor: DungeonFloor
+): GameState {
+  const discoveredLocations = state.worldMap.discoveredLocations.includes(locationId)
+    ? state.worldMap.discoveredLocations
+    : [...state.worldMap.discoveredLocations, locationId]
+
+  return {
+    ...state,
+    phase: 'exploring',
+    exploration: {
+      currentFloorId: floor.id,
+      currentRoomId: floor.startRoomId,
+      playerPosition: { ...floor.startPosition },
+      playerDirection: 'south',
+      visitedRooms: [floor.startRoomId],
+      openedChests: state.exploration.openedChests,
+      activatedSwitches: state.exploration.activatedSwitches,
+      stepsSinceLastEncounter: 0,
+      stepsForMpRecovery: 0,
+    },
+    worldMap: {
+      ...state.worldMap,
+      currentLocationId: locationId,
+      discoveredLocations,
+      travelingTo: null,
+    },
   }
 }
 
@@ -96,10 +142,19 @@ export function deserializeGameState(saveCode: string): GameState | null {
       return null
     }
 
-    // Migrate old saves if needed (future feature)
-    if (saveData.version !== SAVE_VERSION) {
-      console.warn(`Save version mismatch: ${saveData.version} vs ${SAVE_VERSION}`)
-      // Could add migration logic here
+    // Migrate old saves
+    if (saveData.version === '1.0.0') {
+      const gs = saveData.gameState as unknown as Record<string, unknown>
+      if (!gs.worldMap) {
+        gs.worldMap = {
+          currentLocationId:
+            (gs.exploration as ExplorationState).currentFloorId === 'ferno_cave'
+              ? 'ferno_cave'
+              : 'errinel_village',
+          discoveredLocations: ['errinel_village', 'ferno_cave'],
+          travelingTo: null,
+        }
+      }
     }
 
     return saveData.gameState

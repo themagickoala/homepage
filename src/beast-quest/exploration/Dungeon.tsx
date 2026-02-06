@@ -35,6 +35,7 @@ interface DungeonProps {
   onEncounter: (enemyIds: string[]) => void
   onInteract: (entity: MapEntity) => void
   onRoomChange: (roomId: string, position: IsoPosition) => void
+  onExitToWorldMap: () => void
 }
 
 // Movement animation duration in milliseconds
@@ -47,6 +48,7 @@ export function Dungeon({
   onEncounter,
   onInteract,
   onRoomChange,
+  onExitToWorldMap,
 }: DungeonProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [animationFrame, setAnimationFrame] = useState(0)
@@ -197,6 +199,12 @@ export function Dungeon({
       const targetTile = currentRoom.tiles[newRow][newCol]
       if (!isWalkable(targetTile)) return
 
+      // Exit tile transitions to world map
+      if (targetTile === 'exit') {
+        onExitToWorldMap()
+        return
+      }
+
       // Check for entities blocking the path
       const blockingEntity = currentRoom.entities.find(
         (e) => e.position.col === newCol && e.position.row === newRow && !['trigger'].includes(e.type)
@@ -238,7 +246,7 @@ export function Dungeon({
         checkEncounter({ col: newCol, row: newRow })
       }, MOVE_DURATION)
     },
-    [explorationState, currentRoom, isMoving, onMove, checkEncounter, onRoomChange]
+    [explorationState, currentRoom, isMoving, onMove, checkEncounter, onRoomChange, onExitToWorldMap]
   )
 
   // Handle interaction
@@ -581,6 +589,17 @@ export function Dungeon({
           ctx.beginPath()
           ctx.arc(screenPos.x, screenPos.y, 10, 0, Math.PI * 2)
           ctx.fill()
+          ctx.globalAlpha = 1
+        }
+        if (tileType === 'exit') {
+          const screenPos = isoToScreen(tilePos)
+          const pulse = 0.4 + Math.sin(animationFrame * 0.06) * 0.3
+          ctx.globalAlpha = pulse
+          ctx.fillStyle = '#ccaa66'
+          ctx.font = 'bold 12px monospace'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText('EXIT', screenPos.x, screenPos.y - 2)
           ctx.globalAlpha = 1
         }
       }
