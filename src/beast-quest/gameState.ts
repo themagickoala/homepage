@@ -318,6 +318,38 @@ export function equipItem(
 }
 
 /**
+ * Unequip an item from a party member back to inventory
+ */
+export function unequipItem(
+  state: GameState,
+  memberId: string,
+  slot: 'weapon' | 'armor' | 'accessory'
+): GameState {
+  const member = state.party.find((m) => m.id === memberId)
+  if (!member) return state
+
+  const equipped = member.equipment[slot]
+  if (!equipped) return state
+
+  // Add item back to inventory
+  const newInventory = [...state.inventory, { item: equipped, quantity: 1 }]
+
+  // Clear the equipment slot
+  const party = state.party.map((m) => {
+    if (m.id !== memberId) return m
+    return {
+      ...m,
+      equipment: {
+        ...m.equipment,
+        [slot]: null,
+      },
+    }
+  })
+
+  return { ...state, inventory: newInventory, party }
+}
+
+/**
  * Add experience to party
  */
 export function addExperience(state: GameState, amount: number): GameState {

@@ -14,6 +14,7 @@ import {
   toggleSwitch,
   useItem,
   equipItem,
+  unequipItem,
   addExperience,
   addGold,
   updatePlayTime,
@@ -32,11 +33,12 @@ import { Notifications, Notification } from './components/Notifications'
 import { createEnemyInstance } from './combat/enemies'
 import { DUNGEON_DIALOGUES as FERNO_DIALOGUES, CHEST_CONTENTS as FERNO_CHESTS } from './data/ferno-dungeon'
 import { DUNGEON_DIALOGUES as SEPRON_DIALOGUES, CHEST_CONTENTS as SEPRON_CHESTS } from './data/sepron-dungeon'
+import { VILLAGE_DIALOGUES, VILLAGE_CHEST_CONTENTS } from './data/errinel-village'
 import { ITEMS } from './data/items'
 
-// Merge dialogue and chest data from all dungeons
-const ALL_DIALOGUES = { ...FERNO_DIALOGUES, ...SEPRON_DIALOGUES } as Record<string, unknown>
-const ALL_CHESTS: Record<string, string[]> = { ...FERNO_CHESTS, ...SEPRON_CHESTS }
+// Merge dialogue and chest data from all dungeons/villages
+const ALL_DIALOGUES = { ...FERNO_DIALOGUES, ...SEPRON_DIALOGUES, ...VILLAGE_DIALOGUES } as Record<string, unknown>
+const ALL_CHESTS: Record<string, string[]> = { ...FERNO_CHESTS, ...SEPRON_CHESTS, ...VILLAGE_CHEST_CONTENTS }
 
 // Boss metadata for dynamic victory screen
 const BOSS_INFO: Record<string, { name: string; tokenId: string; tokenName: string; tokenBonus: string; flagId: string }> = {
@@ -187,7 +189,7 @@ export function Game() {
   // Handle entity interaction
   const handleInteract = useCallback((entity: MapEntity) => {
     switch (entity.type) {
-      case 'npc':
+      case 'npc': {
         const dialogueId = entity.metadata?.dialogueId as string
         const dialogue = ALL_DIALOGUES[dialogueId]
         if (dialogue) {
@@ -195,6 +197,7 @@ export function Game() {
           setGameState((prev) => (prev ? { ...prev, phase: 'dialogue' } : prev))
         }
         break
+      }
 
       case 'chest':
         setGameState((prev) => {
@@ -356,6 +359,11 @@ export function Game() {
   // Handle equip item
   const handleEquipItem = useCallback((itemId: string, characterId: string) => {
     setGameState((prev) => (prev ? equipItem(prev, itemId, characterId) : prev))
+  }, [])
+
+  // Handle unequip item
+  const handleUnequipItem = useCallback((characterId: string, slot: 'weapon' | 'armor' | 'accessory') => {
+    setGameState((prev) => (prev ? unequipItem(prev, characterId, slot) : prev))
   }, [])
 
   // UI state handlers
@@ -578,6 +586,7 @@ export function Game() {
           gold={gameState.gold}
           onUseItem={handleUseItem}
           onEquipItem={handleEquipItem}
+          onUnequipItem={handleUnequipItem}
           onClose={closeInventory}
         />
       )}

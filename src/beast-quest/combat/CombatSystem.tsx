@@ -28,6 +28,7 @@ import {
   isAlive,
 } from './actions'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../render/isometric'
+import { preloadAvatars, drawAvatar } from '../data/avatars'
 import { drawEnemySprite } from '../render/sprites'
 import {
   drawCharacterStats,
@@ -39,6 +40,36 @@ import {
   UI_COLORS,
   FONTS,
 } from '../render/ui'
+
+function drawCornerHighlight(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  size: number = 10
+) {
+  ctx.strokeStyle = '#ffff00'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  // Top-left
+  ctx.moveTo(x, y + size)
+  ctx.lineTo(x, y)
+  ctx.lineTo(x + size, y)
+  // Top-right
+  ctx.moveTo(x + w - size, y)
+  ctx.lineTo(x + w, y)
+  ctx.lineTo(x + w, y + size)
+  // Bottom-right
+  ctx.moveTo(x + w, y + h - size)
+  ctx.lineTo(x + w, y + h)
+  ctx.lineTo(x + w - size, y + h)
+  // Bottom-left
+  ctx.moveTo(x + size, y + h)
+  ctx.lineTo(x, y + h)
+  ctx.lineTo(x, y + h - size)
+  ctx.stroke()
+}
 
 interface PartyHpMp {
   id: string
@@ -95,6 +126,8 @@ export function CombatSystem({
     // Prevent re-initialization if party/inventory props change during combat
     if (isInitialized.current) return
     isInitialized.current = true
+
+    preloadAvatars()
 
     const partyEntities: CombatEntity[] = party.map((member) => ({
       id: member.id,
@@ -587,13 +620,11 @@ export function CombatSystem({
         const targets = getValidTargets(
           combatState,
           getCurrentEntity()!.id,
-          pendingSkill?.targetType || 'single_enemy'
+          pendingSkill?.targetType || (pendingItem ? 'single_ally' : 'single_enemy')
         )
         const targetIndex = targets.findIndex((t) => t.id === entity.id)
         if (targetIndex === selectedIndex) {
-          ctx.strokeStyle = '#ffff00'
-          ctx.lineWidth = 2
-          ctx.strokeRect(x - 35, y - 50, 70, 120)
+          drawCornerHighlight(ctx, x - 35, y - 50, 70, 120)
         }
       }
     })
@@ -604,9 +635,14 @@ export function CombatSystem({
       const member = party.find((m) => m.id === entity.id)
       if (!member) return
 
-      // Position stats on right side, stacked vertically
+      // Position stats on right side, stacked vertically (shifted right for avatar)
+      const avatarSize = 40
+      const avatarX = CANVAS_WIDTH - 195 - avatarSize - 6
       const statsX = CANVAS_WIDTH - 195
       const statsY = CANVAS_HEIGHT - 155 + index * 75
+
+      // Draw avatar
+      drawAvatar(ctx, avatarX, statsY + 12, avatarSize, member.id)
 
       drawCharacterStats(ctx, statsX, statsY, {
         ...member,
@@ -615,9 +651,21 @@ export function CombatSystem({
 
       // Highlight current turn
       if (combatState.currentEntityIndex === combatState.entities.indexOf(entity)) {
-        ctx.strokeStyle = '#ffff00'
-        ctx.lineWidth = 2
-        ctx.strokeRect(statsX - 2, statsY - 2, 184, 69)
+        drawCornerHighlight(ctx, statsX - 2, statsY - 2, 184, 69)
+      }
+
+      // Highlight if targeted (for ally-targeting skills/items)
+      if (menuState === 'targets') {
+        const targetType = pendingSkill?.targetType || (pendingItem ? 'single_ally' : 'single_enemy')
+        const targets = getValidTargets(
+          combatState,
+          getCurrentEntity()!.id,
+          targetType
+        )
+        const targetIndex = targets.findIndex((t) => t.id === entity.id)
+        if (targetIndex === selectedIndex) {
+          drawCornerHighlight(ctx, statsX - 4, statsY - 4, 188, 73)
+        }
       }
     })
 

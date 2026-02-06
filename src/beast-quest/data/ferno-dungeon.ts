@@ -4,6 +4,7 @@
 // The dungeon layout for the demo - Ferno's mountain cave
 
 import { DungeonFloor, DungeonRoom, TileType, EncounterZone } from '../types'
+import { registerFloor } from './floor-registry'
 
 // Helper to create a tile grid from string representation
 function parseTileMap(map: string[]): TileType[][] {
@@ -324,6 +325,9 @@ export const FERNO_DUNGEON: DungeonFloor = {
   startRoomId: 'entrance',
   startPosition: { col: 5, row: 7 },
 }
+
+// Register with the floor registry
+registerFloor(FERNO_DUNGEON)
 
 /**
  * Get a room by ID
